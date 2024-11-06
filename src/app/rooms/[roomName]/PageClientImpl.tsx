@@ -126,8 +126,6 @@ export function PageClientImpl(props: {
     return <Loading />;
   }
 
-  console.log(preJoinDefaults);
-
   return (
     <LayoutContextProvider>
       <main data-lk-theme='default' style={{ height: '100%' }}>
