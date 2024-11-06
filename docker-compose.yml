@@ -1,0 +1,24 @@
+services:
+  meeting:
+    container_name: meeting
+    build:
+      context: .
+      args:
+        NODE_ENV: production
+        NEXT_PUBLIC_GRAPHQL_URL: https://api.epess.org/v1/graphql
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_aW4tY2hpbXAtOTcuY2xlcmsuYWNjb3VudHMuZGV2JA
+      CLERK_SECRET_KEY: sk_test_sA5lsb1GHwUNXWQCp5ev70QkaoF5EmdAHNWiCGwZF6
+      NEXT_PUBLIC_GRAPHQL_URL: https://api.epess.org/v1/graphql
+    ports:
+      - 5203:3000
+    networks:
+      - epess-net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.center.rule=Host(`center.epess.org`)
+networks:
+  epess-net:
+    driver: bridge
+    external: true
