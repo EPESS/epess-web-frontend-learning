@@ -1,0 +1,56 @@
+# Ignore build output directories
+.next/
+out/
+
+# Ignore dependencies
+node_modules/
+
+# Ignore public folder as it usually contains static assets
+public/
+
+# Ignore environment variable files
+*.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Ignore coverage output
+coverage/
+
+# Ignore log files
+*.log
+
+# Ignore the .idea folder for JetBrains IDEs like WebStorm
+.idea/
+
+# Ignore the .vscode folder for Visual Studio Code
+.vscode/
+
+# Ignore specific configuration files
+.prettierrc
+.prettierignore
+.eslintrc.js
+.eslintrc.json
+.eslintrc.yaml
+tsconfig.json
+tsconfig.*.json
+next.config.js
+babel.config.js
+jest.config.js
+
+# Ignore the .husky folder for Git hooks (if you're using Husky)
+.husky/
+
+# Ignore Docker-related files
+Dockerfile
+docker-compose.yml
+
+# Ignore lock files
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Ignore files in the src folder that you don't want to lint (example)
+# src/some-folder/
+# src/some-file.js

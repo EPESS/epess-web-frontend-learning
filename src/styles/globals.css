@@ -1,0 +1,260 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  background-color: #111;
+}
+
+html,
+body {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  max-width: 500px;
+  padding-inline: 2rem;
+}
+
+.header > img {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+}
+
+.header > h2 {
+  font-family: 'TWK Everett', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 144%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+footer {
+  width: 100%;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background-color: var(--lk-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+footer a,
+h2 a {
+  color: #ff6352;
+  text-decoration-color: #a33529;
+  text-underline-offset: 0.125em;
+}
+
+footer a:hover,
+h2 a {
+  text-decoration-color: #ff6352;
+}
+
+h2 a {
+  text-decoration: none;
+}
+
+@layer base {
+  :root {
+    --bg-login-custom: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 6%,
+        rgba(71, 71, 71, 0.04) 6%,
+        rgba(71, 71, 71, 0.04) 22%,
+        transparent 22%,
+        transparent 100%
+      ),
+      linear-gradient(
+        45deg,
+        transparent 0%,
+        transparent 20%,
+        rgba(71, 71, 71, 0.04) 20%,
+        rgba(71, 71, 71, 0.04) 47%,
+        transparent 47%,
+        transparent 100%
+      ),
+      linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 24%,
+        rgba(71, 71, 71, 0.04) 24%,
+        rgba(71, 71, 71, 0.04) 62%,
+        transparent 62%,
+        transparent 100%
+      ),
+      linear-gradient(
+        45deg,
+        transparent 0%,
+        transparent 73%,
+        rgba(71, 71, 71, 0.04) 73%,
+        rgba(71, 71, 71, 0.04) 75%,
+        transparent 75%,
+        transparent 100%
+      ),
+      linear-gradient(90deg, rgb(255, 255, 255), rgb(255, 255, 255));
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --bg-login-custom: linear-gradient(
+        200deg,
+        rgba(171, 171, 171, 0.05) 0%,
+        rgba(171, 171, 171, 0.05) 23%,
+        rgba(90, 90, 90, 0.05) 23%,
+        rgba(90, 90, 90, 0.05) 48%,
+        rgba(65, 65, 65, 0.05) 48%,
+        rgba(65, 65, 65, 0.05) 61%,
+        rgba(232, 232, 232, 0.05) 61%,
+        rgba(232, 232, 232, 0.05) 100%
+      ),
+      linear-gradient(
+        126deg,
+        rgba(194, 194, 194, 0.05) 0%,
+        rgba(194, 194, 194, 0.05) 11%,
+        rgba(127, 127, 127, 0.05) 11%,
+        rgba(127, 127, 127, 0.05) 33%,
+        rgba(117, 117, 117, 0.05) 33%,
+        rgba(117, 117, 117, 0.05) 99%,
+        rgba(248, 248, 248, 0.05) 99%,
+        rgba(248, 248, 248, 0.05) 100%
+      ),
+      linear-gradient(
+        144deg,
+        rgba(64, 64, 64, 0.05) 0%,
+        rgba(64, 64, 64, 0.05) 33%,
+        rgba(211, 211, 211, 0.05) 33%,
+        rgba(211, 211, 211, 0.05) 50%,
+        rgba(53, 53, 53, 0.05) 50%,
+        rgba(53, 53, 53, 0.05) 75%,
+        rgba(144, 144, 144, 0.05) 75%,
+        rgba(144, 144, 144, 0.05) 100%
+      ),
+      linear-gradient(329deg, hsl(148, 0%, 0%), hsl(148, 0%, 0%));
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+.bg-login-custom {
+  background-image: var(--bg-login-custom);
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* ======================== Clerk Override */
+.cl-rootBox {
+  filter: drop-shadow(0 0 0.5rem #94a3b8);
+}
+
+.cl-avatarBox {
+  width: 36px;
+  height: 36px;
+}
+
+.cl-userButtonTrigger {
+  height: fit-content !important;
+}
+
+.cl-cardBox,
+.cl-signIn-start,
+.cl-signUp-start,
+.cl-footer {
+  background: #18181b;
+  box-shadow: none;
+  padding: 20px;
+}
+
+.cl-socialButtonsBlockButton,
+.cl-socialButtonsBlockButton:hover {
+  height: 40px;
+  background-color: #27272a;
+  color: #fff;
+}
+
+.cl-headerTitle,
+.cl-footerActionLink {
+  filter: brightness(1000%);
+}
+
+.cl-footerActionText,
+.cl-headerSubtitle {
+  color: #94a3b8;
+}
+
+.cl-logoBox {
+  height: 52px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
