@@ -51,6 +51,9 @@ yarn.lock
 package-lock.json
 pnpm-lock.yaml
 
+# Ignore tailwind config file
+tailwind.config.ts
+
 # Ignore files in the src folder that you don't want to lint (example)
 # src/some-folder/
 # src/some-file.js

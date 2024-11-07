@@ -9,7 +9,6 @@ import { ConnectionDetails } from '@/lib/types';
 import {
   CarouselLayout,
   ConnectionStateToast,
-  ControlBar,
   FocusLayout,
   FocusLayoutContainer,
   GridLayout,
@@ -17,14 +16,11 @@ import {
   LayoutContextProvider,
   LiveKitRoom,
   LocalUserChoices,
-  ParticipantTile,
-  PreJoin,
   RoomAudioRenderer,
   TrackReferenceOrPlaceholder,
   useCreateLayoutContext,
   usePinnedTracks,
   useTracks,
-  WidgetState,
 } from '@livekit/components-react';
 import {
   RoomOptions,
@@ -39,6 +35,10 @@ import {
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { ParticipantTile } from './ParticipantTile';
+import { PreJoin } from './PreJoin';
+import { ControlBar } from './ControlBar';
+import { Chat } from './Chat';
 
 declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
@@ -136,6 +136,7 @@ export function PageClientImpl(props: {
               style={{ display: 'grid', placeItems: 'center', height: '100%' }}
             >
               <PreJoin
+                imgPlaceholder={user.avatarUrl}
                 defaults={preJoinDefaults}
                 onSubmit={handlePreJoinSubmit}
                 onError={handlePreJoinError}
@@ -148,6 +149,7 @@ export function PageClientImpl(props: {
             connectionDetails={connectionDetails}
             userChoices={preJoinChoices}
             options={{ codec: props.codec, hq: props.hq }}
+            user={user}
           />
         )}
       </main>
@@ -162,6 +164,7 @@ function VideoConferenceComponent(props: {
     hq: boolean;
     codec: VideoCodec;
   };
+  user: User;
 }) {
   const roomOptions = React.useMemo((): RoomOptions => {
     let videoCodec: VideoCodec | undefined = props.options.codec
@@ -211,14 +214,19 @@ function VideoConferenceComponent(props: {
         toast.error(
           `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
             hasCamera ? '' : 'camera'
-          } không tồn tại`
+          } không tồn tại`,
+          {
+            theme: 'colored',
+          }
         );
       });
       console.error(e);
       return;
     }
     console.error(e);
-    toast.error(`Gặp lỗi không mong muốn: ${e.message}`);
+    toast.error(`Gặp lỗi không mong muốn: ${e.message}`, {
+      theme: 'colored',
+    });
   }, []);
 
   return (
@@ -234,22 +242,31 @@ function VideoConferenceComponent(props: {
         onDisconnected={handleOnLeave}
         onError={handleError}
       >
-        <VideoConference SettingsComponent={SettingsMenu} />
+        <VideoConference
+          SettingsComponent={SettingsMenu}
+          imgPlaceholder={props.user.avatarUrl}
+        />
         <RecordingIndicator />
       </LiveKitRoom>
     </>
   );
 }
 
+export type WidgetState = {
+  showChat: boolean;
+  showSettings?: boolean;
+};
+
 const VideoConference = ({
   SettingsComponent,
+  imgPlaceholder,
   ...props
 }: {
   SettingsComponent: React.FC | undefined;
+  imgPlaceholder: string;
 }) => {
   const [widgetState, setWidgetState] = React.useState<WidgetState>({
     showChat: false,
-    unreadMessages: 0,
     showSettings: false,
   });
   const lastAutoFocusedScreenShareTrack =
@@ -335,26 +352,27 @@ const VideoConference = ({
             {!focusTrack ? (
               <div className='lk-grid-layout-wrapper'>
                 <GridLayout tracks={tracks}>
-                  <ParticipantTile />
+                  <ParticipantTile imgPlaceholder={imgPlaceholder} />
                 </GridLayout>
               </div>
             ) : (
               <div className='lk-focus-layout-wrapper'>
                 <FocusLayoutContainer>
                   <CarouselLayout tracks={carouselTracks}>
-                    <ParticipantTile />
+                    <ParticipantTile imgPlaceholder={imgPlaceholder} />
                   </CarouselLayout>
                   {focusTrack && <FocusLayout trackRef={focusTrack} />}
                 </FocusLayoutContainer>
               </div>
             )}
             <ControlBar
-              controls={{ chat: false, settings: !!SettingsComponent }}
+              controls={{ chat: true, settings: !!SettingsComponent }}
             />
           </div>
+          <Chat style={{ display: widgetState.showChat ? 'grid' : 'none' }} />
           {SettingsComponent && (
             <div
-              className='lk-settings-menu-modal'
+              className='lk-settings-menu-modal z-[1000] max-w-[350px] w-full xs:max-w-auto'
               style={{ display: widgetState.showSettings ? 'block' : 'none' }}
             >
               <SettingsComponent />

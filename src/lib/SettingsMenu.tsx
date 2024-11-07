@@ -81,7 +81,11 @@ export function SettingsMenu(props: SettingsMenuProps) {
   };
 
   return (
-    <div className='settings-menu' style={{ width: '100%' }} {...props}>
+    <div
+      className='settings-menu'
+      style={{ width: '100%'}}
+      {...props}
+    >
       <div className={styles.tabs}>
         {tabs.map(
           (tab) =>

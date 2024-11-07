@@ -24,7 +24,7 @@ function MeetingTab() {
           className='lk-button'
           onClick={startMeeting}
         >
-          Start Meeting
+          Bắt đầu cuộc họp
         </button>
       </div>
     </>
