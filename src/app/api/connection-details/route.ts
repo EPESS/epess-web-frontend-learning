@@ -42,8 +42,6 @@ export async function GET(request: NextRequest) {
       query: GET_AVATAR_URL,
     });
 
-    console.log(avatarData);
-
     if (typeof roomName !== 'string') {
       return new NextResponse('Missing required query parameter: roomName', {
         status: 400,
