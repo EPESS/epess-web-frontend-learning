@@ -102,22 +102,18 @@ export interface ParticipantTileProps
  * @public
  */
 export const ParticipantTile: (
-  props: ParticipantTileProps &
-    React.RefAttributes<HTMLDivElement> & {
-      imgPlaceholder: string;
-    }
+  props: ParticipantTileProps & React.RefAttributes<HTMLDivElement>
 ) => React.ReactNode = /* @__PURE__ */ React.forwardRef<
   HTMLDivElement,
-  ParticipantTileProps & { imgPlaceholder: string }
+  ParticipantTileProps
 >(function ParticipantTile(
   {
     trackRef,
     children,
     onParticipantClick,
     disableSpeakingIndicator,
-    imgPlaceholder,
     ...htmlProps
-  }: ParticipantTileProps & { imgPlaceholder: string },
+  }: ParticipantTileProps,
   ref
 ) {
   const trackReference = useEnsureTrackRef(trackRef);
@@ -177,7 +173,15 @@ export const ParticipantTile: (
                     draggable={false}
                     className='select-none aspect-square w-[100%] h-[100%]'
                   >
-                    <AvatarImage src={imgPlaceholder} alt='Participant' />
+                    <AvatarImage
+                      src={
+                        trackReference.participant.metadata
+                          ? JSON.parse(trackReference.participant.metadata)
+                              .avatarUrl
+                          : ''
+                      }
+                      alt='Participant'
+                    />
                     <AvatarFallback>
                       <ParticipantPlaceholder />
                     </AvatarFallback>

@@ -9,8 +9,6 @@ import { ConnectionDetails } from '@/lib/types';
 import {
   CarouselLayout,
   ConnectionStateToast,
-  FocusLayout,
-  FocusLayoutContainer,
   GridLayout,
   isTrackReference,
   LayoutContextProvider,
@@ -39,6 +37,7 @@ import { ParticipantTile } from './ParticipantTile';
 import { PreJoin } from './PreJoin';
 import { ControlBar } from './ControlBar';
 import { Chat } from './Chat';
+import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
 
 declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
@@ -59,7 +58,7 @@ export function PageClientImpl(props: {
   >(undefined);
 
   const [connectionDetails, setConnectionDetails] = React.useState<
-    ConnectionDetails | undefined
+    (ConnectionDetails & { participantAvatar: string }) | undefined
   >(undefined);
 
   const handlePreJoinSubmit = React.useCallback(
@@ -149,7 +148,6 @@ export function PageClientImpl(props: {
             connectionDetails={connectionDetails}
             userChoices={preJoinChoices}
             options={{ codec: props.codec, hq: props.hq }}
-            user={user}
           />
         )}
       </main>
@@ -159,12 +157,11 @@ export function PageClientImpl(props: {
 
 function VideoConferenceComponent(props: {
   userChoices: LocalUserChoices;
-  connectionDetails: ConnectionDetails;
+  connectionDetails: ConnectionDetails & { participantAvatar: string };
   options: {
     hq: boolean;
     codec: VideoCodec;
   };
-  user: User;
 }) {
   const roomOptions = React.useMemo((): RoomOptions => {
     let videoCodec: VideoCodec | undefined = props.options.codec
@@ -242,10 +239,7 @@ function VideoConferenceComponent(props: {
         onDisconnected={handleOnLeave}
         onError={handleError}
       >
-        <VideoConference
-          SettingsComponent={SettingsMenu}
-          imgPlaceholder={props.user.avatarUrl}
-        />
+        <VideoConference SettingsComponent={SettingsMenu} />
         <RecordingIndicator />
       </LiveKitRoom>
     </>
@@ -259,11 +253,9 @@ export type WidgetState = {
 
 const VideoConference = ({
   SettingsComponent,
-  imgPlaceholder,
   ...props
 }: {
   SettingsComponent: React.FC | undefined;
-  imgPlaceholder: string;
 }) => {
   const [widgetState, setWidgetState] = React.useState<WidgetState>({
     showChat: false,
@@ -352,14 +344,14 @@ const VideoConference = ({
             {!focusTrack ? (
               <div className='lk-grid-layout-wrapper'>
                 <GridLayout tracks={tracks}>
-                  <ParticipantTile imgPlaceholder={imgPlaceholder} />
+                  <ParticipantTile />
                 </GridLayout>
               </div>
             ) : (
               <div className='lk-focus-layout-wrapper'>
                 <FocusLayoutContainer>
                   <CarouselLayout tracks={carouselTracks}>
-                    <ParticipantTile imgPlaceholder={imgPlaceholder} />
+                    <ParticipantTile />
                   </CarouselLayout>
                   {focusTrack && <FocusLayout trackRef={focusTrack} />}
                 </FocusLayoutContainer>

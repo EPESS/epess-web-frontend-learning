@@ -1,5 +1,8 @@
+import { createApolloClient } from '@/lib/apollo-client';
 import { randomString } from '@/lib/client-utils';
 import { ConnectionDetails } from '@/lib/types';
+import { gql } from '@apollo/client';
+import { auth } from '@clerk/nextjs/server';
 import {
   AccessToken,
   AccessTokenOptions,
@@ -11,12 +14,35 @@ const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
+const GET_AVATAR_URL = gql`
+  query AvatarUrl {
+    me {
+      avatarUrl
+    }
+  }
+`;
+
 export async function GET(request: NextRequest) {
   try {
     // Parse query parameters
     const roomName = request.nextUrl.searchParams.get('roomName');
     const participantName = request.nextUrl.searchParams.get('participantName');
-    const metadata = request.nextUrl.searchParams.get('metadata') ?? '';
+
+    const sessionId = auth().sessionId;
+
+    if (!sessionId) {
+      return new NextResponse('Missing required user in server: sessionId', {
+        status: 400,
+      });
+    }
+
+    const apolloClient = createApolloClient(sessionId);
+
+    const avatarData = await apolloClient.query<{ me: { avatarUrl: string } }>({
+      query: GET_AVATAR_URL,
+    });
+
+    console.log(avatarData);
 
     if (typeof roomName !== 'string') {
       return new NextResponse('Missing required query parameter: roomName', {
@@ -35,7 +61,7 @@ export async function GET(request: NextRequest) {
       {
         identity: `${participantName}__${randomString(4)}`,
         name: participantName,
-        metadata,
+        metadata: JSON.stringify({ avatarUrl: avatarData.data?.me.avatarUrl }),
       },
       roomName
     );

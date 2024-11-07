@@ -37,6 +37,7 @@
     "react-dom": "^18",
     "react-loading": "^2.0.3",
     "react-toastify": "^10.0.6",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "tinykeys": "^3.0.0",
