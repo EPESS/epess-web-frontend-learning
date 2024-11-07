@@ -18,7 +18,5 @@ export default function Page({
       : 'vp9';
   const hq = searchParams.hq === 'true' ? true : false;
 
-  return (
-    <PageClientImpl roomName={params.roomName} hq={hq} codec={codec} />
-  );
+  return <PageClientImpl roomName={params.roomName} hq={hq} codec={codec} />;
 }

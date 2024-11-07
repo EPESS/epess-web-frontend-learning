@@ -12,7 +12,7 @@ export function RecordingIndicator() {
         window.alert('This meeting is being recorded');
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording]);
 
   return (

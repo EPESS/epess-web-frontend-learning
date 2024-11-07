@@ -32,5 +32,3 @@ export const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
     </Popover>
   );
 };
-
-

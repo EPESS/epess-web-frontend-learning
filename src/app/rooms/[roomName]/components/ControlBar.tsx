@@ -228,7 +228,10 @@ export function ControlBar({
       {is430px && (
         <Popover>
           <PopoverTrigger>
-            <Button className='h-full flex items-center justify-center' variant='secondary'>
+            <Button
+              className='h-full flex items-center justify-center'
+              variant='secondary'
+            >
               <span className='xs:hidden block'>Chức năng</span>
               <EllipsisVertical className='block xs:hidden' />
             </Button>

@@ -30,11 +30,20 @@ export async function GET(req: NextRequest) {
     const hostURL = new URL(LIVEKIT_URL!);
     hostURL.protocol = 'https:';
 
-    const egressClient = new EgressClient(hostURL.origin, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+    const egressClient = new EgressClient(
+      hostURL.origin,
+      LIVEKIT_API_KEY,
+      LIVEKIT_API_SECRET
+    );
 
     const existingEgresses = await egressClient.listEgress({ roomName });
-    if (existingEgresses.length > 0 && existingEgresses.some((e) => e.status < 2)) {
-      return new NextResponse('Meeting is already being recorded', { status: 409 });
+    if (
+      existingEgresses.length > 0 &&
+      existingEgresses.some((e) => e.status < 2)
+    ) {
+      return new NextResponse('Meeting is already being recorded', {
+        status: 409,
+      });
     }
 
     const fileOutput = new EncodedFileOutput({
@@ -58,7 +67,7 @@ export async function GET(req: NextRequest) {
       },
       {
         layout: 'speaker',
-      },
+      }
     );
 
     return new NextResponse(null, { status: 200 });
