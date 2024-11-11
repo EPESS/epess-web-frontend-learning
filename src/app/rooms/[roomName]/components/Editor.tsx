@@ -1,72 +1,61 @@
 import React, { useEffect } from 'react';
 import { useQuill } from 'react-quilljs';
 import 'quill/dist/quill.snow.css';
-import QuillBetterTable from 'quill-better-table';
+import QuillTableBetter from 'quill-table-better';
+import 'quill-table-better/dist/quill-table-better.css'
+
+export const EDITOR_TOOLBAR_BINDINGS = [
+  ['bold', 'italic', 'underline', 'strike'],
+  ['blockquote', 'code-block'],
+  [{ list: 'ordered' }, { list: 'bullet' }],
+  [{ header: [1, 2, 3, 4, 5, 6, false] }],
+  ['image', 'video'],
+  ['table-better']
+];
 
 export default function Editor() {
   const { quill, quillRef, Quill } = useQuill({
+    theme: 'snow',
+    bounds: 'editor',
     modules: {
       toolbar: {
-        container: [
-          ['bold', 'italic', 'underline', 'strike'],
-          ['blockquote', 'code-block'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ header: [1, 2, 3, 4, 5, 6, false] }],
-          ['image', 'video'],
-          ['table'],
-        ],
-        handlers: {
-          table: async () => {
-            console.log('table');
-            await makeTable(quill); 
-          },
-        },
+        container: EDITOR_TOOLBAR_BINDINGS,
       },
       table: false, // disable table module
-      'better-table': {
-        operationMenu: {
-          items: {
-            unmergeCells: {
-              text: 'Another unmerge cells name',
-            },
-          },
-        },
+      'table-better': {
+        language: 'en_US',
+        menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'delete'],
+        toolbarTable: true
       },
       keyboard: {
-        bindings: QuillBetterTable.keyboardBindings,
-      },
+        bindings: QuillTableBetter.keyboardBindings
+      }
     },
+    placeholder: 'Write something...',
+
+
   });
-  Quill?.register('modules/betterTable', QuillBetterTable);
-  let tableModule = quill?.getModule('better-table') as any;
-  // useEffect(() => {
-  //   console.log(document.getElementsByClassName('ql-table')[0]);
-  //   document
-  //     .querySelector('.ql-formats .ql-table')
-  //     ?.addEventListener('click', () => {
-  //       tableModule?.insertTable(3, 3);
-  //       console.log('hahaha');
-  //     });
-  // }, [document]);
 
   useEffect(() => {
     if (quill) {
       quill.on('text-change', (delta, oldDelta, source) => {
-        console.log(`delta: ${JSON.stringify(delta)}`);
-        console.log(`oldDelta: ${JSON.stringify(oldDelta)}`);
-        console.log(`source: ${source}`);
+        console.log('Text change!');
+        console.log(quill.getText()); // Get text only
+        console.log(quill.getContents()); // Get delta contents
+        console.log(quill.root.innerHTML); // Get innerHTML using quill
+        console.log(quillRef.current.firstChild.innerHTML); // Get innerHTML using quillRef
       });
     }
   }, [quill]);
-
+  if (Quill && !quill) {
+    Quill.register({
+      'modules/table-better': QuillTableBetter
+    }, true);
+  }
   return (
     <div style={{ width: 1000, height: 300 }}>
+      {/* quill editor */}
       <div ref={quillRef} />
     </div>
   );
-}
-async function makeTable(quill: any) {
-  let tableModule = quill?.getModule('better-table') as any;
-  console.log(tableModule);
-  await tableModule?.insertTable(3, 3);
 }
