@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/customs/header';
 import Loading from '@/components/customs/loading';
 import { useMe } from '@/hooks/use-me';
 import { RecordingIndicator } from '@/lib/RecordingIndicator';
@@ -31,12 +30,10 @@ import {
   Participant,
 } from 'livekit-client';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { ParticipantTile } from './ParticipantTile';
-import { PreJoin } from './PreJoin';
 import { ControlBar } from './ControlBar';
-import { Chat } from './Chat';
 import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
 
 declare const window: Window | undefined;
@@ -49,22 +46,16 @@ export function PageClientImpl(props: {
 }) {
   const { user, userLoading } = useMe();
 
-  const [preJoinChoices, setPreJoinChoices] = React.useState<
+  const [preJoinChoices, setPreJoinChoices] = useState<
     LocalUserChoices | undefined
   >(undefined);
 
-  const [preJoinDefaults, setPreJoinDefaults] = useState<
-    LocalUserChoices | undefined
-  >(undefined);
-
-  const [connectionDetails, setConnectionDetails] = React.useState<
+  const [connectionDetails, setConnectionDetails] = useState<
     (ConnectionDetails & { participantAvatar: string }) | undefined
   >(undefined);
 
-  const handlePreJoinSubmit = React.useCallback(
+  const handlePreJoinSubmit = useCallback(
     async (values: LocalUserChoices) => {
-      console.log(values);
-      setPreJoinChoices(values);
       const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
       url.searchParams.append('roomName', props.roomName);
       url.searchParams.append('participantName', values.username);
@@ -74,11 +65,6 @@ export function PageClientImpl(props: {
     },
     [props.roomName]
   );
-  const handlePreJoinError = React.useCallback((e: Error) => {
-    console.error(e);
-  }, []);
-
-  const [isLoading, setIsLoading] = React.useState(true);
 
   useEffect(() => {
     if (user) {
@@ -92,7 +78,7 @@ export function PageClientImpl(props: {
             (device) => device.kind === 'videoinput'
           );
 
-          setPreJoinDefaults({
+          setPreJoinChoices({
             username: user.name.trim(),
             audioEnabled: hasMicrophone,
             videoEnabled: hasCamera,
@@ -112,6 +98,14 @@ export function PageClientImpl(props: {
   }, [user]);
 
   useEffect(() => {
+    if (preJoinChoices) {
+      handlePreJoinSubmit(preJoinChoices);
+    }
+  }, [preJoinChoices, handlePreJoinSubmit]);
+
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  useEffect(() => {
     setIsLoading(false);
   }, []);
 
@@ -120,38 +114,27 @@ export function PageClientImpl(props: {
     !user ||
     isLoading ||
     userLoading ||
-    !preJoinDefaults
+    !preJoinChoices ||
+    !connectionDetails
   ) {
     return <Loading />;
   }
 
   return (
-    <LayoutContextProvider>
-      <main data-lk-theme='default' style={{ height: '100%' }}>
-        {connectionDetails === undefined || preJoinChoices === undefined ? (
-          <>
-            <Header />
-            <div
-              style={{ display: 'grid', placeItems: 'center', height: '100%' }}
-            >
-              <PreJoin
-                imgPlaceholder={user.avatarUrl}
-                defaults={preJoinDefaults}
-                onSubmit={handlePreJoinSubmit}
-                onError={handlePreJoinError}
-                persistUserChoices={false}
-              />
-            </div>
-          </>
-        ) : (
-          <VideoConferenceComponent
-            connectionDetails={connectionDetails}
-            userChoices={preJoinChoices}
-            options={{ codec: props.codec, hq: props.hq }}
-          />
-        )}
-      </main>
-    </LayoutContextProvider>
+    <div className='h-full grid grid-cols-12'>
+      <div className='col-span-8'></div>
+      <div className='col-span-4'>
+        <LayoutContextProvider>
+          <main data-lk-theme='default' style={{ height: '100%' }}>
+            <VideoConferenceComponent
+              connectionDetails={connectionDetails}
+              userChoices={preJoinChoices}
+              options={{ codec: props.codec, hq: props.hq }}
+            />
+          </main>
+        </LayoutContextProvider>
+      </div>
+    </div>
   );
 }
 
@@ -187,7 +170,7 @@ function VideoConferenceComponent(props: {
       adaptiveStream: { pixelDensity: 'screen' },
       dynacast: true,
     };
-  }, [props.userChoices, props.options.hq, props.options.codec]);
+  }, [props.options, props.userChoices]);
 
   const room = React.useMemo(() => new Room(roomOptions), [roomOptions]);
 
@@ -247,7 +230,6 @@ function VideoConferenceComponent(props: {
 }
 
 export type WidgetState = {
-  showChat: boolean;
   showSettings?: boolean;
 };
 
@@ -258,7 +240,6 @@ const VideoConference = ({
   SettingsComponent: React.FC | undefined;
 }) => {
   const [widgetState, setWidgetState] = React.useState<WidgetState>({
-    showChat: false,
     showSettings: false,
   });
   const lastAutoFocusedScreenShareTrack =
@@ -357,11 +338,8 @@ const VideoConference = ({
                 </FocusLayoutContainer>
               </div>
             )}
-            <ControlBar
-              controls={{ chat: true, settings: !!SettingsComponent }}
-            />
+            <ControlBar controls={{ settings: !!SettingsComponent }} />
           </div>
-          <Chat style={{ display: widgetState.showChat ? 'grid' : 'none' }} />
           {SettingsComponent && (
             <div
               className='lk-settings-menu-modal z-[1000] max-w-[350px] w-full xs:max-w-auto'
