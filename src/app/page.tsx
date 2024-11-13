@@ -1,12 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import React, { useState } from 'react';
 import { generateRoomId } from '@/lib/client-utils';
 import styles from '@/styles/Home.module.css';
 import Header from '@/components/customs/header';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
+import Editor from './rooms/[roomName]/components/Editor';
+import Quill from 'quill';
 
 function MeetingTab() {
   const router = useRouter();
@@ -33,17 +35,23 @@ function MeetingTab() {
 
 export default function Page() {
   const { userLoading } = useMe();
+
+  const [range, setRange] = useState();
+  const [lastChange, setLastChange] = useState();
+  const [readOnly, setReadOnly] = useState(false);
+
   if (userLoading) {
     return <Loading />;
   }
   return (
     <>
-      <main className={styles.main} data-lk-theme='default'>
+      {/* <main className={styles.main} data-lk-theme='default'>
         <div className='header'>
           <img src='/main_icon.png' alt='EPESS' width={200} className='!mb-5' />
         </div>
         <MeetingTab />
-      </main>
+      </main> */}
+      <Editor />
     </>
   );
 }

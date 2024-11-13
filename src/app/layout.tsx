@@ -26,7 +26,7 @@ export default function RootLayout({
     <ClerkProvider>
       <ApolloClientProvider>
         <html lang='en'>
-          <body className='dark'>
+          <body className='light'>
             <ToastContainer />
             {children}
           </body>

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const {
       LIVEKIT_API_KEY,
       LIVEKIT_API_SECRET,
-      LIVEKIT_URL,
+      NEXT_PUBLIC_LIVEKIT_URL,
       S3_KEY_ID,
       S3_KEY_SECRET,
       S3_BUCKET,
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       S3_REGION,
     } = process.env;
 
-    const hostURL = new URL(LIVEKIT_URL!);
+    const hostURL = new URL(NEXT_PUBLIC_LIVEKIT_URL!);
     hostURL.protocol = 'https:';
 
     const egressClient = new EgressClient(

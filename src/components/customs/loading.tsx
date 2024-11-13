@@ -1,21 +1,29 @@
-import React from 'react';
-import ReactLoading from 'react-loading';
+import React, { useEffect } from 'react';
+import gsap from 'gsap';
 
-export default function Loading({
-  width = 100,
-  height = 100,
-}: {
-  width?: number;
-  height?: number;
-}) {
+export default function Loading() {
+  const text = 'EPESS';
+
+  useEffect(() => {
+    gsap.to('.char', {
+      y: -35,
+      repeat: -1,
+      yoyo: true,
+      duration: 0.5,
+      ease: 'sine.inOut',
+      stagger: 0.1,
+    });
+  }, []);
+
   return (
-    <div className='flex h-screen w-screen items-center justify-center'>
-      <ReactLoading
-        type='bars'
-        className='!fill-slate-400'
-        width={width}
-        height={height}
-      />
+    <div className='relative flex justify-center items-center h-screen !bg-background'>
+      <div className='wave-text text-9xl font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'>
+        {text.split('').map((char, index) => (
+          <span key={index} className='char text-slate-200 inline-block'>
+            {char === ' ' ? '\u00A0' : char}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

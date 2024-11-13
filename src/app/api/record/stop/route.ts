@@ -16,9 +16,10 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Missing roomName parameter', { status: 403 });
     }
 
-    const { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } = process.env;
+    const { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, NEXT_PUBLIC_LIVEKIT_URL } =
+      process.env;
 
-    const hostURL = new URL(LIVEKIT_URL!);
+    const hostURL = new URL(NEXT_PUBLIC_LIVEKIT_URL!);
     hostURL.protocol = 'https:';
 
     const egressClient = new EgressClient(
