@@ -51,6 +51,8 @@ export enum EVENT_NAMES {
   EDITOR_UNFOCUS = 'editor-unfocus',
   SCROLL_UPDATE = 'scroll-update',
   SELECTION_CHANGE = 'selection-change',
+  AI_SUGGESTION = 'ai-suggestion',
+  PAGE_DELETE = 'page-delete',
 }
 export const PAGE_SIZES = {
   A4: {
@@ -58,12 +60,7 @@ export const PAGE_SIZES = {
     width: 210,
     height: 297,
   },
-  Test: {
-    padding: 10,
-    width: 2100,
-    height: 2970,
-  },
-  A3: {
+  'A3': {
     padding: 10,
     width: 297,
     height: 420,
@@ -210,6 +207,9 @@ export class PageManager {
   deletePage(index: number): boolean {
     try {
       this.pages.splice(index, 1);
+      // remove page from document
+      document.getElementById(`page-${index}`)?.remove();
+      this.pages[index].emitter.emit(EVENT_NAMES.PAGE_DELETE, index);
       return true;
     } catch (error) {
       console.error(error);
@@ -254,19 +254,25 @@ export class PageManager {
     this.pages[pageIndex].updateContents(delta, source);
     // todo: update delta manager
   }
-  static attachToEditor(editor: Quill) {}
+  static attachToEditor(editor: Quill) { }
 
   pushToPageList(page: Quill) {
     // pre push section
     // register event listener
     page.on(EVENT_NAMES.TEXT_CHANGE, (eventName, ...args) => {
-      // console.log(eventName, args);
+      console.log(eventName, args);
       // print current page
-      // console.log(page);
+      console.log(page);
+      // if page id not page-0 and page length is 1, delete page
+      if (page.container.id !== 'page-0' && page.getLength() === 1) {
+        console.log('delete page');
+        console.log(page.container.id);
+        this.deletePage(this.pages.indexOf(page));
+      }
     });
     // catch scroll event
     page.on(EVENT_NAMES.SCROLL_UPDATE, (eventName, ...args) => {
-      // console.log(eventName, args);
+      console.log(eventName, args);
     });
 
     page.on(EVENT_NAMES.EDITOR_CHANGE, (eventName, ...args) => {
@@ -275,13 +281,18 @@ export class PageManager {
         console.log('page is overflowing');
         this.trimOverflowingContent(page);
       }
+      console.log(eventName, args);
+      // check if cursor is at the end of the page
+      // if (page.getSelection()?.index === page.getLength() - 1) {
+      //   // todo: apply ai suggestion
+      // }
     });
     page.on(EVENT_NAMES.SELECTION_CHANGE, (eventName, ...args) => {
       // console.log(eventName, args);
       if (args[0] !== null) return;
       // update current page index
       this.currentPageIndex = this.pages.indexOf(page);
-      // console.log(this.currentPageIndex);
+      console.log(this.currentPageIndex);
     });
     // push to page list
     this.pages.push(page);
@@ -302,11 +313,9 @@ export class PageManager {
       (this.config.margin * 2 + this.config.padding * 2) -
       1;
 
-    console.log(`effectivePageHeight: ${effectivePageHeight}`);
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index];
       contentHeight += line.domNode.offsetHeight;
-      console.log(`contentHeight: ${contentHeight}`);
       if (contentHeight >= effectivePageHeight) {
         deleteIndex = page.getIndex(line);
         break; // Break the loop
@@ -322,7 +331,16 @@ export class PageManager {
       );
       // apply overflow delta to next page
       this.nextPage().updateContents(overflowDelta, Quill.sources.SILENT);
+      this.moveCursorToNextPage();
     }
+  }
+  moveCursorToNextPage() {
+    this.getCurrentPage().blur();
+    this.currentPageIndex++;
+    // using document.getElementById to move cursor to next page
+    this.getCurrentPage().focus();
+    // set selection to beginning of the page
+    this.getCurrentPage().setSelection(0);
   }
 
   static isPageOverflowing(page: Quill) {
@@ -547,7 +565,8 @@ export default function Editor() {
                 <DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <span>Sub Menu</span>
+                      <Button variant='ghost' className='h-6 px-0'>
+                      </Button>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem>Sub Option 1</DropdownMenuItem>
