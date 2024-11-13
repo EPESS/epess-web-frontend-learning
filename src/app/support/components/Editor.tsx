@@ -36,8 +36,9 @@ import {
 import Toolbar from 'quill/modules/toolbar';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
-import Keyboard from 'quill/modules/keyboard';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -365,6 +366,10 @@ export class PageManager {
     // this.getCurrentPage().getModule('toolbar').attach(this.pages[index]);
   }
 
+  formatSelected(format: string, params: string) {
+    this.getCurrentPage().format(format, params, Quill.sources.USER);
+  }
+
   static isPageOverflowing(page: Quill) {
     return page.root.scrollHeight > page.root.clientHeight;
   }
@@ -402,20 +407,20 @@ export default function Editor() {
     return () => observer.disconnect();
   }, [pageManager]);
 
-  const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setZoomLevel(parseFloat(event.target.value));
-  };
+  // const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  //   setZoomLevel(parseFloat(event.target.value));
+  // };
 
   // handle delete character, if last character of last page, delete page
-  const handleDeleteCharacter = () => {
-    if (pageManager) {
-      const lastPage = pageManager.getLastPage();
-      const lastPageContent = lastPage.getText();
-      if (lastPageContent.length === 1) {
-        pageManager.deletePage(pageManager.pages.length - 1);
-      }
-    }
-  };
+  // const handleDeleteCharacter = () => {
+  //   if (pageManager) {
+  //     const lastPage = pageManager.getLastPage();
+  //     const lastPageContent = lastPage.getText();
+  //     if (lastPageContent.length === 1) {
+  //       pageManager.deletePage(pageManager.pages.length - 1);
+  //     }
+  //   }
+  // };
 
   return (
     <div className='h-full w-full flex'>
@@ -462,7 +467,7 @@ export default function Editor() {
           </div>
           <div>
             {/* test apply delta */}
-            <Button
+            {/* <Button
               variant='ghost'
               className='h-6 px-0'
               onClick={() => {
@@ -480,10 +485,10 @@ export default function Editor() {
               }}
             >
               Apply Delta
-            </Button>
+            </Button> */}
           </div>
-          <div>
-            {/* Zoom control */}
+          {/* <div>
+      
             <select
               onChange={handleZoomChange}
               value={zoomLevel.toString()}
@@ -496,46 +501,64 @@ export default function Editor() {
               <option value='1.5'>150%</option>
               <option value='2'>200%</option>
             </select>
-          </div>
+          </div> */}
           {/*quilljs toolbar */}
-          <div id='toolbar' className='flex justify-center items-center gap-3 w-full bg-gray-300 rounded-3xl p-1'>
+          <div id='toolbar' className='flex justify-center items-center gap-3 w-full bg-gray-100 shadow-2xl rounded-3xl p-1 mb-1 mt-1'>
             {/* caption control eg normal, h1, h2, h3, h4, h5, h6  */}
+            <Separator orientation="vertical" />
             <div>
-              <select className='h-6 border border-gray-300 rounded bg-white'>
-                <option className='ql-normal' value='normal'>Normal</option>
-                <option className='ql-h1' value='h1'>Heading 1</option>
-                <option className='ql-h2' value='h2'>Heading 2</option>
-                <option className='ql-h3' value='h3'>Heading 3</option>
-                <option className='ql-h4' value='h4'>Heading 4</option>
-                <option className='ql-h5' value='h5'>Heading 5</option>
-                <option className='ql-h6' value='h6'>Heading 6</option>
-              </select>
+              <Select>
+                <SelectTrigger className="h-6 w-[100px]">
+                  <SelectValue placeholder="Normal" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem className='ql-normal' value='normal'>Normal</SelectItem>
+                  <SelectItem className='ql-h1' value='h1'>Heading 1</SelectItem>
+                  <SelectItem className='ql-h2' value='h2'>Heading 2</SelectItem>
+                  <SelectItem className='ql-h3' value='h3'>Heading 3</SelectItem>
+                  <SelectItem className='ql-h4' value='h4'>Heading 4</SelectItem>
+                  <SelectItem className='ql-h5' value='h5'>Heading 5</SelectItem>
+                  <SelectItem className='ql-h6' value='h6'>Heading 6</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Input type='text' placeholder='Caption' />
-            </div>
+            <Separator orientation="vertical" />
             {/* font family control */}
             <div>
-              <select className='h-6 border border-gray-300 rounded bg-white'>
-                <option value='Arial'>Arial</option>
-                <option value='Courier New'>Courier New</option>
-                <option value='Georgia'>Georgia</option>
-                <option value='Times New Roman'>Times New Roman</option>
-                <option value='Verdana'>Verdana</option>
-              </select>
+              {/* use font size style */}
+              <Select>
+                <SelectTrigger className="h-6 w-[100px]">
+                  <SelectValue placeholder="Font" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='Courier New'>Courier New</SelectItem>
+                  <SelectItem value='Georgia'>Georgia</SelectItem>
+                  <SelectItem value='Times New Roman'>Times New Roman</SelectItem>
+                  <SelectItem value='Verdana'>Verdana</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <Separator orientation="vertical" />
             {/* font size control */}
+          
             <div className='flex items-center gap-3 h-6 '>
-              <div className='flex items-center gap-3 h-6'>
-                <Button variant='ghost' className='h-6 px-0'></Button>
-                <select className='ql-size h-6 border border-gray-300 rounded bg-white'>
-                  <option value='small'>small</option>
-                  <option value='false'>normal</option>
-                  <option value='large'>large</option>
-                  <option value='huge'>huge</option>
-                </select>
-              </div>
+          
+            {/* font size */}
+                {/* add default value is large */}
+                <Select>
+                  <SelectTrigger className="h-6 w-[100px]">
+                    <SelectValue placeholder="Size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">small</SelectItem>
+                    <SelectItem value="false">normal</SelectItem>
+                    <SelectItem value="large" >large</SelectItem>
+                    <SelectItem value="huge">huge</SelectItem>
+                  </SelectContent>
+                </Select>
+           
             </div>
+            <Separator orientation="vertical" />
             {/* clear format */}
             <div>
               <Button variant='ghost' className='ql-clean h-6 px-0'>
@@ -558,6 +581,7 @@ export default function Editor() {
                 <UnderlineIcon className='w-4 h-4' />
               </Button>
             </div>
+            <Separator orientation="vertical" />
             <div>
               <Button variant='ghost' className='ql-strike h-6 px-0'>
                 <StrikethroughIcon className='w-4 h-4' />
@@ -626,7 +650,7 @@ export default function Editor() {
           </div>
         </div>
         {/* maintain min height equal to page size * 1.5 */}
-        <div className='z-0 bg-gray-100 flex justify-center pt-4 px-32 h-screen overflow-y-scroll no-scrollbar'>
+        <div className='z-0 bg-gray-50 flex justify-center pt-4 px-32 h-screen overflow-y-scroll no-scrollbar rounded-lg'>
           <div
             className='overflow-auto min-h-full pb-56 no-scrollbar'
             style={{
