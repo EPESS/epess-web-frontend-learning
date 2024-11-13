@@ -1,7 +1,5 @@
 'use client';
 
-import Loading from '@/components/customs/loading';
-import { useMe } from '@/hooks/use-me';
 import { RecordingIndicator } from '@/lib/RecordingIndicator';
 import { SettingsMenu } from '@/lib/SettingsMenu';
 import { ConnectionDetails } from '@/lib/types';
@@ -35,17 +33,18 @@ import { toast } from 'react-toastify';
 import { ParticipantTile } from './ParticipantTile';
 import { ControlBar } from './ControlBar';
 import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
+import ReactLoading from 'react-loading';
+import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 
 declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
 
-export function PageClientImpl(props: {
+function MeetingClientImplCpn(props: {
   roomName: string;
   hq: boolean;
   codec: VideoCodec;
+  user: User;
 }) {
-  const { user, userLoading } = useMe();
-
   const [preJoinChoices, setPreJoinChoices] = useState<
     LocalUserChoices | undefined
   >(undefined);
@@ -67,7 +66,7 @@ export function PageClientImpl(props: {
   );
 
   useEffect(() => {
-    if (user) {
+    if (props.user) {
       navigator.mediaDevices
         .enumerateDevices()
         .then((devices) => {
@@ -79,7 +78,7 @@ export function PageClientImpl(props: {
           );
 
           setPreJoinChoices({
-            username: user.name.trim(),
+            username: props.user.name.trim(),
             audioEnabled: hasMicrophone,
             videoEnabled: hasCamera,
             videoDeviceId:
@@ -95,7 +94,7 @@ export function PageClientImpl(props: {
           console.error('Error accessing media devices: ', error);
         });
     }
-  }, [user]);
+  }, [props.user]);
 
   useEffect(() => {
     if (preJoinChoices) {
@@ -111,32 +110,31 @@ export function PageClientImpl(props: {
 
   if (
     typeof window === 'undefined' ||
-    !user ||
     isLoading ||
-    userLoading ||
     !preJoinChoices ||
     !connectionDetails
   ) {
-    return <Loading />;
+    return (
+      <div className='flex justify-center items-center w-full h-full bg-zinc-900'>
+        <ReactLoading type='bars' />
+      </div>
+    );
   }
 
   return (
-    <div className='h-full grid grid-cols-12'>
-      <div className='col-span-8'></div>
-      <div className='col-span-4'>
-        <LayoutContextProvider>
-          <main data-lk-theme='default' style={{ height: '100%' }}>
-            <VideoConferenceComponent
-              connectionDetails={connectionDetails}
-              userChoices={preJoinChoices}
-              options={{ codec: props.codec, hq: props.hq }}
-            />
-          </main>
-        </LayoutContextProvider>
-      </div>
-    </div>
+    <LayoutContextProvider>
+      <main data-lk-theme='default' style={{ height: '100%' }}>
+        <VideoConferenceComponent
+          connectionDetails={connectionDetails}
+          userChoices={preJoinChoices}
+          options={{ codec: props.codec, hq: props.hq }}
+        />
+      </main>
+    </LayoutContextProvider>
   );
 }
+
+export const MeetingClientImpl = React.memo(MeetingClientImplCpn);
 
 function VideoConferenceComponent(props: {
   userChoices: LocalUserChoices;
@@ -204,9 +202,6 @@ function VideoConferenceComponent(props: {
       return;
     }
     console.error(e);
-    toast.error(`Gặp lỗi không mong muốn: ${e.message}`, {
-      theme: 'colored',
-    });
   }, []);
 
   return (
@@ -239,9 +234,6 @@ const VideoConference = ({
 }: {
   SettingsComponent: React.FC | undefined;
 }) => {
-  const [widgetState, setWidgetState] = React.useState<WidgetState>({
-    showSettings: false,
-  });
   const lastAutoFocusedScreenShareTrack =
     React.useRef<TrackReferenceOrPlaceholder | null>(null);
 
@@ -252,10 +244,6 @@ const VideoConference = ({
     ],
     { updateOnlyOn: [RoomEvent.ActiveSpeakersChanged], onlySubscribed: false }
   );
-
-  const widgetUpdate = (state: WidgetState) => {
-    setWidgetState(state);
-  };
 
   const layoutContext = useCreateLayoutContext();
 
@@ -314,40 +302,41 @@ const VideoConference = ({
     tracks,
   ]);
 
+  const { isMeetingAndChatOpen } = useToggleMeetingAndChat();
+
   return (
     <div className='lk-video-conference' {...props}>
       {isWeb() && (
-        <LayoutContextProvider
-          value={layoutContext}
-          onWidgetChange={widgetUpdate}
-        >
-          <div className='lk-video-conference-inner'>
-            {!focusTrack ? (
-              <div className='lk-grid-layout-wrapper'>
-                <GridLayout tracks={tracks}>
-                  <ParticipantTile />
-                </GridLayout>
-              </div>
-            ) : (
-              <div className='lk-focus-layout-wrapper'>
-                <FocusLayoutContainer>
-                  <CarouselLayout tracks={carouselTracks}>
-                    <ParticipantTile />
-                  </CarouselLayout>
-                  {focusTrack && <FocusLayout trackRef={focusTrack} />}
-                </FocusLayoutContainer>
+        <LayoutContextProvider value={layoutContext}>
+          <div className='lk-video-conference-inner h-full flex flex-row'>
+            {!isMeetingAndChatOpen && (
+              <div className='w-1/5 flex items-center justify-center bg-zinc-900'>
+                <ControlBar
+                  className='flex flex-col gap-5 !border-none'
+                  vertical={true}
+                />
               </div>
             )}
-            <ControlBar controls={{ settings: !!SettingsComponent }} />
-          </div>
-          {SettingsComponent && (
-            <div
-              className='lk-settings-menu-modal z-[1000] max-w-[350px] w-full xs:max-w-auto'
-              style={{ display: widgetState.showSettings ? 'block' : 'none' }}
-            >
-              <SettingsComponent />
+            <div className='w-full'>
+              {!focusTrack ? (
+                <div className='lk-grid-layout-wrapper'>
+                  <GridLayout tracks={tracks}>
+                    <ParticipantTile />
+                  </GridLayout>
+                </div>
+              ) : (
+                <div className='lk-focus-layout-wrapper'>
+                  <FocusLayoutContainer>
+                    <CarouselLayout tracks={carouselTracks}>
+                      <ParticipantTile />
+                    </CarouselLayout>
+                    {focusTrack && <FocusLayout trackRef={focusTrack} />}
+                  </FocusLayoutContainer>
+                </div>
+              )}
+              {isMeetingAndChatOpen && <ControlBar />}
             </div>
-          )}
+          </div>
         </LayoutContextProvider>
       )}
       <RoomAudioRenderer />
