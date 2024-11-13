@@ -3,6 +3,25 @@ import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { useAuth } from '@clerk/nextjs';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
+import { createClient } from 'graphql-ws';
+
+export const clientWS = createClient({
+  url: process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'https://api.epess.org/v1/graphql',
+  on: {
+      connecting: () => {
+          console.log("testt");
+      },
+      connected: () => {
+          console.log('WebSocket connected successfully.');
+      },
+      error: (error) => {
+          console.error('WebSocket connection error:', error);
+      },
+      closed: () => {
+          console.log('WebSocket connection closed.');
+      }
+  }
+});
 
 const uploadLink = createUploadLink({
   uri:

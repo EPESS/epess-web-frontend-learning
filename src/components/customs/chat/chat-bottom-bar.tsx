@@ -1,0 +1,182 @@
+"use client"
+
+import { Paperclip, SendHorizontal, ThumbsUp } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
+import MoonLoader from 'react-spinners/MoonLoader';
+import { Input } from '@/components/ui/input';
+import { useUser } from '@clerk/nextjs';
+import { EmojiPicker } from '../emoji-picker';
+import { EFileType, useCreateSingleUpload } from '@/app/api/file';
+import { ChatInput } from './chat-input';
+
+export enum MessageType {
+    TEXT = 'TEXT',
+    ATTACHMENT = 'ATTACHMENT'
+}
+
+type TChatBottomBar = {
+    handleOnChange: (value: string | undefined, type?: MessageType) => void,
+    loading?: boolean,
+    fileExist?: boolean,
+}
+
+const TYPEIMAGE = ['image/png', 'image/jpg']
+
+export default function ChatBottomBar({ handleOnChange, loading = false }: TChatBottomBar) {
+    const [message, setMessage] = useState('');
+
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    const { user } = useUser()
+
+    const [uploadFile, { loading: uploadLoading }] = useCreateSingleUpload();
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setMessage(event.target.value);
+    };
+
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleOnChange(message)
+            setMessage('')
+        }
+
+        if (event.key === 'Enter' && event.shiftKey) {
+            event.preventDefault();
+            setMessage((prev) => prev + '\n');
+        }
+    };
+
+    const handleKeyClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        handleOnChange(message)
+        setMessage('')
+    };
+
+    const handleThumbsUp = () => {
+        handleOnChange("👍");
+        setMessage("");
+    };
+
+    const handleSingleUploadFile = async (listFile: FileList | null) => {
+        if (!listFile) return;
+        const fileUpload = listFile[0]
+
+        if (!fileUpload) {
+            return;
+        }
+
+        let fileType = EFileType.IMAGE
+
+        if (!TYPEIMAGE.includes(fileUpload.type)) {
+            fileType = EFileType.DOCUMENT
+        }
+
+        const variables = {
+            fileType: fileType,
+            file: fileUpload,
+            userId: user?.id ?? ''
+        }
+
+        const dataFile = await uploadFile({
+            variables,
+        });
+
+        handleOnChange(dataFile.data?.singleUpload?.fileUrl, MessageType.ATTACHMENT)
+        setMessage('')
+    }
+
+
+    return (
+        <div className={cn('flex gap-3 h-[10%]')}>
+            <div className='flex flex-col w-full'>
+                <div className='px-2 py-1 flex justify-between w-full items-center gap-2'>
+                    <div className='flex cursor-pointer'>
+                        {!message.trim() && (
+                            <div
+                                className={cn(
+                                    buttonVariants({ variant: 'ghost', size: 'icon' }),
+                                    'h-9 w-9 cursor-pointer relative',
+                                    'shrink-0'
+                                )}
+                            >
+                                <div className='relative cursor-pointer flex w-full h-full'>
+                                    <Input onChange={(e) => handleSingleUploadFile(e.target.files)} type='file' className='h-full w-full z-10 cursor-pointer opacity-0 absolute top-0 left-0 right-0 bottom-0' />
+                                    <Paperclip size={22} className='m-auto cursor-pointer text-muted-foreground' />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <AnimatePresence initial={false}>
+                        <motion.div
+                            key='input'
+                            className='w-full relative'
+                            layout
+                            initial={{ opacity: 0, scale: 1 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1 }}
+                            transition={{
+                                opacity: { duration: 0.05 },
+                                layout: {
+                                    type: 'spring',
+                                    bounce: 0.15,
+                                },
+                            }}
+                        >
+                            <ChatInput
+                                value={message}
+                                ref={inputRef}
+                                onPaste={(e) => console.log(e)}
+                                onKeyDown={handleKeyPress}
+                                onChange={handleInputChange}
+                                placeholder='Nhập tin nhắn...'
+                                className='rounded-full min-h-0'
+                            />
+
+                            <div className='absolute right-4 bottom-2'>
+                                <EmojiPicker
+                                    onChange={(value) => {
+                                        setMessage(message + value);
+                                        if (inputRef.current) {
+                                            inputRef.current.focus();
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </motion.div>
+
+                        {uploadLoading && loading ?
+                            <div className='h-9 w-9 shrink-0'>
+                                <MoonLoader size={25} className="w-full h-full" />
+                            </div>
+                            : message.trim() ? (
+                                <Button
+                                    onClick={(e) => handleKeyClick(e)}
+                                    className='h-9 w-9 shrink-0'
+                                    variant='ghost'
+                                    size='icon'
+                                >
+                                    <SendHorizontal size={22} className='text-muted-foreground' />
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={handleThumbsUp}
+                                    className='h-9 w-9 shrink-0'
+                                    variant='ghost'
+                                    size='icon'
+                                >
+                                    <ThumbsUp size={22} className='text-muted-foreground' />
+                                </Button>
+                            )}
+                    </AnimatePresence>
+                </div>
+            </div>
+
+        </div>
+    );
+}
