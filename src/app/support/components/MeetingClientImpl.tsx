@@ -41,7 +41,7 @@ const CONN_DETAILS_ENDPOINT = '/api/connection-details';
 
 function MeetingClientImplCpn(props: {
   roomName: string;
-  hq: boolean;
+  hq: boolean; // high quality
   codec: VideoCodec;
   user: User;
 }) {
@@ -190,8 +190,7 @@ function VideoConferenceComponent(props: {
           (device) => device.kind === 'videoinput'
         );
         toast.error(
-          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
-            hasCamera ? '' : 'camera'
+          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${hasCamera ? '' : 'camera'
           } không tồn tại`,
           {
             theme: 'colored',
@@ -203,6 +202,8 @@ function VideoConferenceComponent(props: {
     }
     console.error(e);
   }, []);
+
+  const { isMeetingAndChatOpen } = useToggleMeetingAndChat();
 
   return (
     <>
@@ -216,9 +217,20 @@ function VideoConferenceComponent(props: {
         audio={props.userChoices.audioEnabled}
         onDisconnected={handleOnLeave}
         onError={handleError}
+        className='flex flex-col items-center justify-center w-full h-full'
       >
-        <VideoConference SettingsComponent={SettingsMenu} />
+        {isMeetingAndChatOpen && (
+          <VideoConference SettingsComponent={SettingsMenu} />
+        )}
+
         <RecordingIndicator />
+
+        {!isMeetingAndChatOpen && (
+          <ControlBar
+            className='flex flex-col gap-5 !border-none p-0 m-0'
+            vertical={true}
+          />
+        )}
       </LiveKitRoom>
     </>
   );
@@ -308,7 +320,7 @@ const VideoConference = ({
     <div className='lk-video-conference' {...props}>
       {isWeb() && (
         <LayoutContextProvider value={layoutContext}>
-          <div className='lk-video-conference-inner h-full flex flex-row'>
+          <div className='lk-video-conference-inner flex flex-row'>
             {!isMeetingAndChatOpen && (
               <div className='w-1/5 flex items-center justify-center bg-zinc-900'>
                 <ControlBar
