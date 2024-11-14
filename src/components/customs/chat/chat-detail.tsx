@@ -1,17 +1,16 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import { Video } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from '@/lib/utils'
-import { useUser } from '@clerk/nextjs'
 import ScaleLoader from 'react-spinners/ScaleLoader'
 import ChatBottomBar, { MessageType } from './chat-bottom-bar'
 import { useSendMessage } from '@/app/api/message'
-import { getChatRoomDetail, Message } from '@/app/api/message/roomDetail'
+import { useGetChatRoomDetail, Message } from '@/app/api/message/roomDetail'
 import { clientWS } from '@/providers/apolloClient'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import ToolTipCustom from '../tool-tip'
+import { useUser } from '@clerk/nextjs'
 
 type TChatDetail = {
     roomId?: string,
@@ -32,7 +31,7 @@ const ChatDetail = ({ roomId = "74189dc6-4371-40ca-aaa7-93efc4c3a6be" }: TChatDe
 
     const [skip, setSkip] = useState(0)
 
-    const { data: msg, loading: msgLoading, fetchMore } = getChatRoomDetail({
+    const { data: msg, loading: msgLoading, fetchMore } = useGetChatRoomDetail({
         chatRoomId: roomId ?? '',
         skip: skip,
         take: 10

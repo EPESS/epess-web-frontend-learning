@@ -13,6 +13,7 @@
     "prefer-const": "off",
     "@typescript-eslint/no-explicit-any":"off",
     "import/no-anonymous-default-export": "off",
-    "@next/next/no-img-element": "off"
+    "@next/next/no-img-element": "off",
+    "@typescript-eslint/no-unused-expressions":"off"
   }
 }

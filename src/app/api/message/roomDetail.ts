@@ -61,7 +61,7 @@ type TGetChatRoomDetail = {
     take?: number
 }
 
-export const getChatRoomDetail = (room: TGetChatRoomDetail) => {
+export const useGetChatRoomDetail = (room: TGetChatRoomDetail) => {
     return useQuery<ChatRoom>(GETCHATROOMDETAIL, {
         variables: {
             ...room,
