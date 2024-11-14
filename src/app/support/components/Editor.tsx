@@ -420,8 +420,7 @@ export default function Editor() {
   //       pageManager.deletePage(pageManager.pages.length - 1);
   //     }
   //   }
-  // };
-
+  // };ds
   return (
     <div className='h-full w-full flex'>
       {/* editor */}
