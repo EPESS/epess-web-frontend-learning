@@ -7,7 +7,11 @@ import styles from '@/styles/Home.module.css';
 import Header from '@/components/customs/header';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
-import Editor from './support/components/Editor';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('../app/support/components/Editor'), {
+  ssr: false
+})
 
 function MeetingTab() {
   const router = useRouter();

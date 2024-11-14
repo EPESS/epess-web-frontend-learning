@@ -35,13 +35,14 @@ import { ControlBar } from './ControlBar';
 import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
 import ReactLoading from 'react-loading';
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
+import { useStore } from '@/hooks/use-store';
 
 declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
 
 function MeetingClientImplCpn(props: {
   roomName: string;
-  hq: boolean;
+  hq: boolean; // high quality
   codec: VideoCodec;
   user: User;
 }) {
@@ -122,7 +123,6 @@ function MeetingClientImplCpn(props: {
   }
 
   return (
-    <LayoutContextProvider>
       <main data-lk-theme='default' style={{ height: '100%' }}>
         <VideoConferenceComponent
           connectionDetails={connectionDetails}
@@ -130,7 +130,6 @@ function MeetingClientImplCpn(props: {
           options={{ codec: props.codec, hq: props.hq }}
         />
       </main>
-    </LayoutContextProvider>
   );
 }
 
@@ -204,6 +203,11 @@ function VideoConferenceComponent(props: {
     console.error(e);
   }, []);
 
+  const isMeetingAndChatOpen = useStore(
+    useToggleMeetingAndChat,
+    (state) => state.isMeetingAndChatOpen
+  );
+
   return (
     <>
       <LiveKitRoom
@@ -216,9 +220,20 @@ function VideoConferenceComponent(props: {
         audio={props.userChoices.audioEnabled}
         onDisconnected={handleOnLeave}
         onError={handleError}
+        className='flex flex-col items-center justify-center w-full h-full'
       >
-        <VideoConference SettingsComponent={SettingsMenu} />
+        {isMeetingAndChatOpen && (
+          <VideoConference SettingsComponent={SettingsMenu} />
+        )}
+
         <RecordingIndicator />
+
+        {!isMeetingAndChatOpen && (
+          <ControlBar
+            className='flex flex-col gap-5 !border-none p-0 m-0'
+            vertical={true}
+          />
+        )}
       </LiveKitRoom>
     </>
   );
@@ -302,21 +317,11 @@ const VideoConference = ({
     tracks,
   ]);
 
-  const { isMeetingAndChatOpen } = useToggleMeetingAndChat();
-
   return (
-    <div className='lk-video-conference' {...props}>
+    <div className='lk-video-conference !w-full' {...props}>
       {isWeb() && (
         <LayoutContextProvider value={layoutContext}>
-          <div className='lk-video-conference-inner h-full flex flex-row'>
-            {!isMeetingAndChatOpen && (
-              <div className='w-1/5 flex items-center justify-center bg-zinc-900'>
-                <ControlBar
-                  className='flex flex-col gap-5 !border-none'
-                  vertical={true}
-                />
-              </div>
-            )}
+          <div className='lk-video-conference-inner flex flex-row'>
             <div className='w-full'>
               {!focusTrack ? (
                 <div className='lk-grid-layout-wrapper'>
@@ -334,7 +339,7 @@ const VideoConference = ({
                   </FocusLayoutContainer>
                 </div>
               )}
-              {isMeetingAndChatOpen && <ControlBar />}
+              <ControlBar />
             </div>
           </div>
         </LayoutContextProvider>
