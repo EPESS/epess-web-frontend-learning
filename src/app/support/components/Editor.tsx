@@ -10,13 +10,17 @@ import { Button } from '@/components/ui/button';
 import {
   Baseline,
   BoldIcon,
+  CodeIcon,
   FileIcon,
   ImageIcon,
   ItalicIcon,
   LinkIcon,
   MoreHorizontalIcon,
   PlusIcon,
+  RemoveFormatting,
+  RemoveFormattingIcon,
   SaveIcon,
+  StrikethroughIcon,
   UnderlineIcon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -32,7 +36,9 @@ import {
 import Toolbar from 'quill/modules/toolbar';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
-import Keyboard from 'quill/modules/keyboard';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -60,7 +66,7 @@ export const PAGE_SIZES = {
     width: 210,
     height: 297,
   },
-  'A3': {
+  A3: {
     padding: 10,
     width: 297,
     height: 420,
@@ -86,7 +92,7 @@ export type ViewConfig = {
   zoomPercent: number;
 };
 
-export const GLOBAL_MARGIN = 10;
+export const GLOBAL_MARGIN = 30;
 export class PageConfiguration {
   public pageSize: string;
   public margin: number;
@@ -113,29 +119,34 @@ export class DeltaManager {
 }
 export class PageManager {
   public config: PageConfiguration;
-  public Quill: typeof Quill;
-  public quill: Quill;
-  public toolbar: Toolbar;
+  private Quill: typeof Quill;
+  public _toolbar: Toolbar | undefined;
   public pages: Quill[] = [];
-  public currentPageIndex: number = 0;
-  public firstPage: HTMLElement;
-  public lastPage: HTMLElement;
+  public _currentPageIndex: number = 0;
+
+  get currentPageIndex() {
+    return this._currentPageIndex;
+  }
+  set currentPageIndex(index: number) {
+    this._currentPageIndex = index;
+    this.attachToolbarToPage(index);
+  }
+
+  get toolbar() {
+    return new Toolbar(this.pages[this.currentPageIndex], {
+      container: document.getElementById('toolbar'),
+    });
+  }
+
 
   constructor(quill: Quill) {
     // initialize config
     this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
     this.Quill = Quill; // Quill class
-    this.quill = quill as Quill; // Quill instance
-    this.toolbar = quill.getModule('toolbar') as Toolbar; // global toolbar instance
     this.pushToPageList(quill);
-    this.firstPage = document.getElementById('page-0') as HTMLElement;
-    this.lastPage = document.getElementById(
-      `page-${this.pages.length - 1}`
-    ) as HTMLElement;
     // this.deltaManager = new DeltaManager(quill.getContents());
   }
   static newQuill(container: HTMLElement) {
-    console.log(`new quill ${container}`);
     return new Quill(container, {
       modules: {
         toolbar: false,
@@ -182,28 +193,14 @@ export class PageManager {
     newPage.style.width = `${width}mm`;
     newPage.style.height = `${height}mm`;
     newPage.style.margin = `${this.config.margin}px`;
+    newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
     // append new page to document after last page
-    this.lastPage.after(newPage);
+    this.getLastPage().container.after(newPage);
     // create new quill instance and push to page list
     const newQuill = PageManager.newQuill(newPage);
     this.pushToPageList(newQuill);
     return newQuill;
   }
-
-  // deprecated
-  newPageWithRegistry(registry: Parchment.Registry) {
-    // create new quill instance using registry and push to pages array
-    const newPage = new this.Quill(this.quill.container, {
-      modules: {
-        toolbar: false,
-      },
-      registry: registry,
-      theme: 'snow',
-    });
-    this.pushToPageList(newPage);
-    return newPage;
-  }
-
   deletePage(index: number): boolean {
     try {
       this.pages.splice(index, 1);
@@ -221,6 +218,14 @@ export class PageManager {
     const currentPosition: number =
       Number(this.getCurrentPage().getSelection()?.index) || 0;
     return currentPosition;
+  }
+
+  getFirstPage() {
+    return this.pages[0];
+  }
+
+  getLastPage() {
+    return this.pages[this.pages.length - 1];
   }
 
   gotoPage(index: number) {
@@ -254,16 +259,11 @@ export class PageManager {
     this.pages[pageIndex].updateContents(delta, source);
     // todo: update delta manager
   }
-  static attachToEditor(editor: Quill) { }
 
   pushToPageList(page: Quill) {
     // pre push section
     // register event listener
     page.on(EVENT_NAMES.TEXT_CHANGE, (eventName, ...args) => {
-      console.log(eventName, args);
-      // print current page
-      console.log(page);
-      // if page id not page-0 and page length is 1, delete page
       if (page.container.id !== 'page-0' && page.getLength() === 1) {
         console.log('delete page');
         console.log(page.container.id);
@@ -281,36 +281,40 @@ export class PageManager {
         console.log('page is overflowing');
         this.trimOverflowingContent(page);
       }
-      console.log(eventName, args);
-      // check if cursor is at the end of the page
-      // if (page.getSelection()?.index === page.getLength() - 1) {
-      //   // todo: apply ai suggestion
-      // }
+      // update current page index if page index change
+      if (this.currentPageIndex !== this.pages.indexOf(page)) {
+        this.currentPageIndex = this.pages.indexOf(page);
+        // update toolbar
+        this.attachToolbarToPage(this.currentPageIndex);
+      }
     });
     page.on(EVENT_NAMES.SELECTION_CHANGE, (eventName, ...args) => {
       // console.log(eventName, args);
       if (args[0] !== null) return;
-      // update current page index
-      this.currentPageIndex = this.pages.indexOf(page);
-      console.log(this.currentPageIndex);
+      // check if current page index change
+      if (this.currentPageIndex !== this.pages.indexOf(page)) {
+        console.log('current page index change');
+        this.currentPageIndex = this.pages.indexOf(page);
+      }
+      else {
+        console.log('only selection change');
+      }
+
     });
     // push to page list
     this.pages.push(page);
-    // post push
-    this.lastPage = this.pages[this.pages.length - 1].container;
   }
 
   trimOverflowingContent(page: Quill) {
     // calculate overflow content in delta, delete overflow content and apply delta to next page
     const overflowContent = page.getContents();
-    const pageHeight = page.root.clientHeight;
     let contentHeight = 0;
     let deleteIndex = 0;
 
     const lines = page.getLines();
     const effectivePageHeight =
       page.root.clientHeight -
-      (this.config.margin * 2 + this.config.padding * 2) -
+      (this.config.margin + this.config.padding * 2) -
       1;
 
     for (let index = 0; index < lines.length; index++) {
@@ -331,9 +335,19 @@ export class PageManager {
       );
       // apply overflow delta to next page
       this.nextPage().updateContents(overflowDelta, Quill.sources.SILENT);
-      this.moveCursorToNextPage();
+      // this.moveCursorToNextPage();
     }
   }
+
+  // neverfix
+  // handleUnderflowContent(page: Quill) {
+  //   // handle underflow content in page
+  //   const underflowContent = page.getContents();
+  //   const underflowDelta = underflowContent.slice(0, 1);
+  //   page.deleteText(0, 1, Quill.sources.SILENT);
+  //   this.previousPage()?.updateContents(underflowDelta, Quill.sources.SILENT);
+  // }
+
   moveCursorToNextPage() {
     this.getCurrentPage().blur();
     this.currentPageIndex++;
@@ -341,6 +355,19 @@ export class PageManager {
     this.getCurrentPage().focus();
     // set selection to beginning of the page
     this.getCurrentPage().setSelection(0);
+  }
+
+  attachToolbarToPage(index: number) {
+    this.pages[index].options.modules.toolbar = this.toolbar;
+  }
+
+  focusToPage(index: number) {
+    // attach toolbar to current page
+    // this.getCurrentPage().getModule('toolbar').attach(this.pages[index]);
+  }
+
+  formatSelected(format: string, params: string) {
+    this.getCurrentPage().format(format, params, Quill.sources.USER);
   }
 
   static isPageOverflowing(page: Quill) {
@@ -364,7 +391,8 @@ export default function Editor() {
               PageManager.newQuill(pageElement)
             );
             setPageManager(newPageManager);
-            PageManager.attachToEditor(newPageManager.getCurrentPage());
+            // attach toolbar to page
+            newPageManager.attachToolbarToPage(0);
             observer.disconnect();
           }
         }
@@ -379,26 +407,27 @@ export default function Editor() {
     return () => observer.disconnect();
   }, [pageManager]);
 
-  const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setZoomLevel(parseFloat(event.target.value));
-  };
+  // const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  //   setZoomLevel(parseFloat(event.target.value));
+  // };
 
   // handle delete character, if last character of last page, delete page
-  const handleDeleteCharacter = () => {
-    if (pageManager) {
-      const lastPage = pageManager.lastPage;
-      const lastPageContent = lastPage.innerText;
-      if (lastPageContent.length === 1) {
-        pageManager.deletePage(pageManager.pages.length - 1);
-      }
-    }
-  };
+  // const handleDeleteCharacter = () => {
+  //   if (pageManager) {
+  //     const lastPage = pageManager.getLastPage();
+  //     const lastPageContent = lastPage.getText();
+  //     if (lastPageContent.length === 1) {
+  //       pageManager.deletePage(pageManager.pages.length - 1);
+  //     }
+  //   }
+  // };
 
   return (
     <div className='h-full w-full flex'>
       {/* editor */}
-      <div className='w-full flex flex-col h-auto overflow-hidden'>
-        <div className='flex flex-col'>
+      <div className='w-full flex flex-col max-h-screen h-screen'>
+        {/* tool bar */}
+        <div id='toolbar' className='flex flex-col z-10'>
           <div className='bg-white h-14 w-full flex items-center gap-2 p-2'>
             {/* logo */}
             <Avatar className='w-10 h-10'>
@@ -438,7 +467,7 @@ export default function Editor() {
           </div>
           <div>
             {/* test apply delta */}
-            <Button
+            {/* <Button
               variant='ghost'
               className='h-6 px-0'
               onClick={() => {
@@ -456,10 +485,10 @@ export default function Editor() {
               }}
             >
               Apply Delta
-            </Button>
+            </Button> */}
           </div>
-          <div>
-            {/* Zoom control */}
+          {/* <div>
+      
             <select
               onChange={handleZoomChange}
               value={zoomLevel.toString()}
@@ -472,74 +501,109 @@ export default function Editor() {
               <option value='1.5'>150%</option>
               <option value='2'>200%</option>
             </select>
-          </div>
+          </div> */}
           {/*quilljs toolbar */}
-          <div className='flex justify-center items-center gap-3 w-full bg-gray-300 rounded-3xl p-1'>
+          <div id='toolbar' className='flex justify-center items-center gap-3 w-full bg-gray-100 shadow-2xl rounded-3xl p-1 mb-1 mt-1'>
             {/* caption control eg normal, h1, h2, h3, h4, h5, h6  */}
+            <Separator orientation="vertical" />
             <div>
-              <select className='h-6 border border-gray-300 rounded bg-white'>
-                <option value='normal'>Normal</option>
-                <option value='h1'>Heading 1</option>
-                <option value='h2'>Heading 2</option>
-                <option value='h3'>Heading 3</option>
-                <option value='h4'>Heading 4</option>
-                <option value='h5'>Heading 5</option>
-                <option value='h6'>Heading 6</option>
-              </select>
+              <Select>
+                <SelectTrigger className="h-6 w-[100px]">
+                  <SelectValue placeholder="Normal" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem className='ql-normal' value='normal'>Normal</SelectItem>
+                  <SelectItem className='ql-h1' value='h1'>Heading 1</SelectItem>
+                  <SelectItem className='ql-h2' value='h2'>Heading 2</SelectItem>
+                  <SelectItem className='ql-h3' value='h3'>Heading 3</SelectItem>
+                  <SelectItem className='ql-h4' value='h4'>Heading 4</SelectItem>
+                  <SelectItem className='ql-h5' value='h5'>Heading 5</SelectItem>
+                  <SelectItem className='ql-h6' value='h6'>Heading 6</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Input type='text' placeholder='Caption' />
-            </div>
+            <Separator orientation="vertical" />
             {/* font family control */}
             <div>
-              <select className='h-6 border border-gray-300 rounded bg-white'>
-                <option value='Arial'>Arial</option>
-                <option value='Courier New'>Courier New</option>
-                <option value='Georgia'>Georgia</option>
-                <option value='Times New Roman'>Times New Roman</option>
-                <option value='Verdana'>Verdana</option>
-              </select>
+              {/* use font size style */}
+              <Select>
+                <SelectTrigger className="h-6 w-[100px]">
+                  <SelectValue placeholder="Font" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='Courier New'>Courier New</SelectItem>
+                  <SelectItem value='Georgia'>Georgia</SelectItem>
+                  <SelectItem value='Times New Roman'>Times New Roman</SelectItem>
+                  <SelectItem value='Verdana'>Verdana</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <Separator orientation="vertical" />
             {/* font size control */}
+          
             <div className='flex items-center gap-3 h-6 '>
-              <div className='flex items-center gap-3 h-6'>
-                <Button variant='ghost' className='h-6 px-0'></Button>
-                <select className='h-6 border border-gray-300 rounded bg-white'>
-                  <option value='12'>12</option>
-                  <option value='14'>14</option>
-                  <option value='16'>16</option>
-                  <option value='18'>18</option>
-                  <option value='20'>20</option>
-                  <option value='24'>24</option>
-                  <option value='28'>28</option>
-                  <option value='32'>32</option>
-                  <option value='36'>36</option>
-                  <option value='48'>48</option>
-                  <option value='60'>60</option>
-                  <option value='72'>72</option>
-                </select>
-              </div>
+          
+            {/* font size */}
+                {/* add default value is large */}
+                <Select>
+                  <SelectTrigger className="h-6 w-[100px]">
+                    <SelectValue placeholder="Size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">small</SelectItem>
+                    <SelectItem value="false">normal</SelectItem>
+                    <SelectItem value="large" >large</SelectItem>
+                    <SelectItem value="huge">huge</SelectItem>
+                  </SelectContent>
+                </Select>
+           
+            </div>
+            <Separator orientation="vertical" />
+            {/* clear format */}
+            <div>
+              <Button variant='ghost' className='ql-clean h-6 px-0'>
+                <RemoveFormatting className='w-4 h-4' />
+              </Button>
             </div>
             {/* bold */}
             <div className='flex items-center gap-3 h-6'>
-              <Button variant='ghost' className='h-6 px-0'>
+              <Button variant='ghost' className='ql-bold h-6 px-0'>
                 <BoldIcon className='w-4 h-4' />
               </Button>
             </div>
             <div>
-              <Button variant='ghost' className='h-6 px-0'>
+              <Button variant='ghost' className='ql-italic h-6 px-0'>
                 <ItalicIcon className='w-4 h-4' />
               </Button>
             </div>
             <div>
-              <Button variant='ghost' className='h-6 px-0'>
+              <Button variant='ghost' className='ql-underline h-6 px-0'>
                 <UnderlineIcon className='w-4 h-4' />
+              </Button>
+            </div>
+            <Separator orientation="vertical" />
+            <div>
+              <Button variant='ghost' className='ql-strike h-6 px-0'>
+                <StrikethroughIcon className='w-4 h-4' />
               </Button>
             </div>
             {/* text color picker */}
             <div>
               <Button variant='ghost' className='h-6 px-0'>
                 <Baseline className='w-4 h-4' />
+                {/* color picker */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant='ghost' className='h-6 px-0'>
+                      <MoreHorizontalIcon className='w-4 h-4' />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div>
+                      <Input type='color' />
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </Button>
             </div>
             {/* hyperlink */}
@@ -554,6 +618,12 @@ export default function Editor() {
                 <ImageIcon className='w-4 h-4' />
               </Button>
             </div>
+            {/* code block */}
+            <div>
+              <Button variant='ghost' className='ql-code-block h-6 px-0'>
+                <CodeIcon className='w-4 h-4' />
+              </Button>
+            </div>
             {/* more options */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -565,8 +635,7 @@ export default function Editor() {
                 <DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <Button variant='ghost' className='h-6 px-0'>
-                      </Button>
+                      <Button variant='ghost' className='h-6 px-0'></Button>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem>Sub Option 1</DropdownMenuItem>
@@ -581,44 +650,24 @@ export default function Editor() {
           </div>
         </div>
         {/* maintain min height equal to page size * 1.5 */}
-        <div
-          className='pb-20 min-h-[calc(100vh-10rem)] flex justify-center pt-4 px-32 overflow-auto h-auto '
-          style={{
-            width: '100%',
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#888 #f1f1f1',
-          }}
-        >
-          <div className=''>
+        <div className='z-0 bg-gray-50 flex justify-center pt-4 px-32 h-screen overflow-y-scroll no-scrollbar rounded-lg'>
+          <div
+            className='overflow-auto min-h-full pb-56 no-scrollbar'
+            style={{
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left',
+            }}
+          >
             <div
+              id='page-0'
+              className='overflow-auto min-h-full bg-white drop-shadow-lg'
               style={{
-                transform: `scale(${zoomLevel})`,
-                transformOrigin: 'top left',
+                width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
+                margin: `${pageConfig.margin}px`,
               }}
-            >
-              <div
-                id='page-0'
-                style={{
-                  width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
-                  height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
-                  margin: `${pageConfig.margin}px`,
-                }}
-              />{' '}
-              {/* quill editor */}
-            </div>
-
-            {/* new page button */}
-            <Button
-              variant='ghost'
-              className='h-6 px-0'
-              onClick={() => {
-                if (pageManager) {
-                  pageManager.newJSXPage(document);
-                }
-              }}
-            >
-              <PlusIcon className='w-4 h-4' />
-            </Button>
+            />{' '}
+            {/* quill editor */}
           </div>
         </div>
       </div>
