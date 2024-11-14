@@ -7,8 +7,7 @@ import styles from '@/styles/Home.module.css';
 import Header from '@/components/customs/header';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
-import Editor from './rooms/[roomName]/components/Editor';
-import Quill from 'quill';
+import Editor from './support/components/Editor';
 
 function MeetingTab() {
   const router = useRouter();

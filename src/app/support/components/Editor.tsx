@@ -2,19 +2,37 @@
 import { useEffect, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import QuillTableBetter from 'quill-table-better';
-import 'quill-table-better/dist/quill-table-better.css'
+import 'quill-table-better/dist/quill-table-better.css';
 import { gql } from '@apollo/client';
 import { useSubscription } from '@apollo/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Baseline, BoldIcon, FileIcon, ImageIcon, ItalicIcon, LinkIcon, MoreHorizontalIcon, PlusIcon, SaveIcon, UnderlineIcon } from 'lucide-react';
+import {
+  Baseline,
+  BoldIcon,
+  FileIcon,
+  ImageIcon,
+  ItalicIcon,
+  LinkIcon,
+  MoreHorizontalIcon,
+  PlusIcon,
+  SaveIcon,
+  UnderlineIcon,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Toolbar from 'quill/modules/toolbar';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
 import Keyboard from 'quill/modules/keyboard';
-
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -32,44 +50,41 @@ export enum EVENT_NAMES {
   EDITOR_FOCUS = 'editor-focus',
   EDITOR_UNFOCUS = 'editor-unfocus',
   SCROLL_UPDATE = 'scroll-update',
-  SELECTION_CHANGE = 'selection-change'
+  SELECTION_CHANGE = 'selection-change',
+  AI_SUGGESTION = 'ai-suggestion',
+  PAGE_DELETE = 'page-delete',
 }
 export const PAGE_SIZES = {
-  'A4': {
+  A4: {
     padding: 10,
     width: 210,
-    height: 297
-  },
-  'Test': {
-    padding: 10,
-    width: 2100,
-    height: 2970
+    height: 297,
   },
   'A3': {
     padding: 10,
     width: 297,
-    height: 420
+    height: 420,
   },
-  'Legal': {
+  Legal: {
     padding: 10,
     width: 215.9,
-    height: 355.6
+    height: 355.6,
   },
-  'Tabloid': {
+  Tabloid: {
     padding: 10,
     width: 1509.36,
-    height: 2133.6
+    height: 2133.6,
   },
-  'Letter': {
+  Letter: {
     padding: 10,
     width: 215.9,
-    height: 279.4
-  }
+    height: 279.4,
+  },
 };
 
 export type ViewConfig = {
   zoomPercent: number;
-}
+};
 
 export const GLOBAL_MARGIN = 10;
 export class PageConfiguration {
@@ -82,8 +97,8 @@ export class PageConfiguration {
     this.margin = GLOBAL_MARGIN;
     this.padding = PAGE_SIZES[pageSize].padding;
     this.viewConfig = {
-      zoomPercent: 100
-    }
+      zoomPercent: 100,
+    };
   }
 }
 export class DeltaManager {
@@ -114,14 +129,16 @@ export class PageManager {
     this.toolbar = quill.getModule('toolbar') as Toolbar; // global toolbar instance
     this.pushToPageList(quill);
     this.firstPage = document.getElementById('page-0') as HTMLElement;
-    this.lastPage = document.getElementById(`page-${this.pages.length - 1}`) as HTMLElement;
+    this.lastPage = document.getElementById(
+      `page-${this.pages.length - 1}`
+    ) as HTMLElement;
     // this.deltaManager = new DeltaManager(quill.getContents());
   }
   static newQuill(container: HTMLElement) {
     console.log(`new quill ${container}`);
     return new Quill(container, {
       modules: {
-        toolbar: false
+        toolbar: false,
       },
       placeholder: 'Type here...',
       theme: 'snow',
@@ -146,16 +163,16 @@ export class PageManager {
     // create new quill instance using registry and push to pages array
     const newPage = new this.Quill(container, {
       modules: {
-        toolbar: false
+        toolbar: false,
       },
-      theme: 'snow'
+      theme: 'snow',
     });
     this.pushToPageList(newPage);
     // return element and append after page-0
     return {
       container: newPage.container,
-      quill: newPage
-    }
+      quill: newPage,
+    };
   }
 
   newJSXPage(document: Document) {
@@ -173,16 +190,15 @@ export class PageManager {
     return newQuill;
   }
 
-
   // deprecated
   newPageWithRegistry(registry: Parchment.Registry) {
     // create new quill instance using registry and push to pages array
     const newPage = new this.Quill(this.quill.container, {
       modules: {
-        toolbar: false
+        toolbar: false,
       },
       registry: registry,
-      theme: 'snow'
+      theme: 'snow',
     });
     this.pushToPageList(newPage);
     return newPage;
@@ -191,6 +207,9 @@ export class PageManager {
   deletePage(index: number): boolean {
     try {
       this.pages.splice(index, 1);
+      // remove page from document
+      document.getElementById(`page-${index}`)?.remove();
+      this.pages[index].emitter.emit(EVENT_NAMES.PAGE_DELETE, index);
       return true;
     } catch (error) {
       console.error(error);
@@ -199,7 +218,8 @@ export class PageManager {
   }
 
   getCurrentCursor() {
-    const currentPosition: number = Number(this.getCurrentPage().getSelection()?.index) || 0;
+    const currentPosition: number =
+      Number(this.getCurrentPage().getSelection()?.index) || 0;
     return currentPosition;
   }
 
@@ -234,20 +254,25 @@ export class PageManager {
     this.pages[pageIndex].updateContents(delta, source);
     // todo: update delta manager
   }
-  static attachToEditor(editor: Quill) {
-  }
+  static attachToEditor(editor: Quill) { }
 
   pushToPageList(page: Quill) {
     // pre push section
     // register event listener
     page.on(EVENT_NAMES.TEXT_CHANGE, (eventName, ...args) => {
-      // console.log(eventName, args);
+      console.log(eventName, args);
       // print current page
-      // console.log(page);
+      console.log(page);
+      // if page id not page-0 and page length is 1, delete page
+      if (page.container.id !== 'page-0' && page.getLength() === 1) {
+        console.log('delete page');
+        console.log(page.container.id);
+        this.deletePage(this.pages.indexOf(page));
+      }
     });
     // catch scroll event
     page.on(EVENT_NAMES.SCROLL_UPDATE, (eventName, ...args) => {
-      // console.log(eventName, args);
+      console.log(eventName, args);
     });
 
     page.on(EVENT_NAMES.EDITOR_CHANGE, (eventName, ...args) => {
@@ -256,13 +281,18 @@ export class PageManager {
         console.log('page is overflowing');
         this.trimOverflowingContent(page);
       }
+      console.log(eventName, args);
+      // check if cursor is at the end of the page
+      // if (page.getSelection()?.index === page.getLength() - 1) {
+      //   // todo: apply ai suggestion
+      // }
     });
     page.on(EVENT_NAMES.SELECTION_CHANGE, (eventName, ...args) => {
       // console.log(eventName, args);
       if (args[0] !== null) return;
       // update current page index
       this.currentPageIndex = this.pages.indexOf(page);
-      // console.log(this.currentPageIndex);
+      console.log(this.currentPageIndex);
     });
     // push to page list
     this.pages.push(page);
@@ -278,13 +308,14 @@ export class PageManager {
     let deleteIndex = 0;
 
     const lines = page.getLines();
-    const effectivePageHeight = page.root.clientHeight - ((this.config.margin * 2) + (this.config.padding * 2)) - 1;
+    const effectivePageHeight =
+      page.root.clientHeight -
+      (this.config.margin * 2 + this.config.padding * 2) -
+      1;
 
-    console.log(`effectivePageHeight: ${effectivePageHeight}`);
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index];
       contentHeight += line.domNode.offsetHeight;
-      console.log(`contentHeight: ${contentHeight}`);
       if (contentHeight >= effectivePageHeight) {
         deleteIndex = page.getIndex(line);
         break; // Break the loop
@@ -293,10 +324,23 @@ export class PageManager {
 
     if (deleteIndex > 0) {
       const overflowDelta = overflowContent.slice(deleteIndex);
-      page.deleteText(deleteIndex, overflowContent.length() - deleteIndex, Quill.sources.SILENT);
+      page.deleteText(
+        deleteIndex,
+        overflowContent.length() - deleteIndex,
+        Quill.sources.SILENT
+      );
       // apply overflow delta to next page
       this.nextPage().updateContents(overflowDelta, Quill.sources.SILENT);
+      this.moveCursorToNextPage();
     }
+  }
+  moveCursorToNextPage() {
+    this.getCurrentPage().blur();
+    this.currentPageIndex++;
+    // using document.getElementById to move cursor to next page
+    this.getCurrentPage().focus();
+    // set selection to beginning of the page
+    this.getCurrentPage().setSelection(0);
   }
 
   static isPageOverflowing(page: Quill) {
@@ -309,7 +353,6 @@ export default function Editor() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
 
-
   useEffect(() => {
     // initialize page config
     const observer = new MutationObserver((mutations) => {
@@ -317,7 +360,9 @@ export default function Editor() {
         if (mutation.addedNodes.length) {
           const pageElement = document.getElementById('page-0');
           if (pageElement && !pageManager) {
-            const newPageManager = new PageManager(PageManager.newQuill(pageElement));
+            const newPageManager = new PageManager(
+              PageManager.newQuill(pageElement)
+            );
             setPageManager(newPageManager);
             PageManager.attachToEditor(newPageManager.getCurrentPage());
             observer.disconnect();
@@ -328,17 +373,15 @@ export default function Editor() {
 
     observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
     });
 
     return () => observer.disconnect();
   }, [pageManager]);
 
-
   const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setZoomLevel(parseFloat(event.target.value));
   };
-
 
   // handle delete character, if last character of last page, delete page
   const handleDeleteCharacter = () => {
@@ -349,17 +392,17 @@ export default function Editor() {
         pageManager.deletePage(pageManager.pages.length - 1);
       }
     }
-  }
+  };
 
   return (
     <div className='h-full w-full flex'>
       {/* editor */}
-      <div className='w-2/3 flex flex-col h-auto overflow-hidden'>
+      <div className='w-full flex flex-col h-auto overflow-hidden'>
         <div className='flex flex-col'>
           <div className='bg-white h-14 w-full flex items-center gap-2 p-2'>
             {/* logo */}
             <Avatar className='w-10 h-10'>
-              <AvatarImage src="https://objects.epess.org/epess-public/main_icon.png" />
+              <AvatarImage src='https://objects.epess.org/epess-public/main_icon.png' />
               <AvatarFallback>CN</AvatarFallback>
             </Avatar>
             {/* title */}
@@ -375,39 +418,59 @@ export default function Editor() {
               </div>
               {/* Menu bar */}
               <div className='flex items-center gap-3 h-6'>
-                <Button variant='ghost' className='h-6 px-0'>File</Button>
-                <Button variant='ghost' className='h-6 px-0'>Edit</Button>
-                <Button variant='ghost' className='h-6 px-0'>View</Button>
-                <Button variant='ghost' className='h-6 px-0'>Share</Button>
-                <Button variant='ghost' className='h-6 px-0'>Help</Button>
+                <Button variant='ghost' className='h-6 px-0'>
+                  File
+                </Button>
+                <Button variant='ghost' className='h-6 px-0'>
+                  Edit
+                </Button>
+                <Button variant='ghost' className='h-6 px-0'>
+                  View
+                </Button>
+                <Button variant='ghost' className='h-6 px-0'>
+                  Share
+                </Button>
+                <Button variant='ghost' className='h-6 px-0'>
+                  Help
+                </Button>
               </div>
-
             </div>
-
           </div>
           <div>
             {/* test apply delta */}
-            <Button variant='ghost' className='h-6 px-0' onClick={() => {
-              if (pageManager) {
-                pageManager.applyDelta(new Delta(
-                  [
-                    // retain current cursor
-                    { retain: pageManager.getCurrentCursor() },
-                    { insert: 'Hello, world!' }
-                  ]
-                ), pageManager.currentPageIndex, Quill.sources.USER);
-              }
-            }}>Apply Delta</Button>
+            <Button
+              variant='ghost'
+              className='h-6 px-0'
+              onClick={() => {
+                if (pageManager) {
+                  pageManager.applyDelta(
+                    new Delta([
+                      // retain current cursor
+                      { retain: pageManager.getCurrentCursor() },
+                      { insert: 'Hello, world!' },
+                    ]),
+                    pageManager.currentPageIndex,
+                    Quill.sources.USER
+                  );
+                }
+              }}
+            >
+              Apply Delta
+            </Button>
           </div>
           <div>
             {/* Zoom control */}
-            <select onChange={handleZoomChange} value={zoomLevel.toString()} className='bg-white'>
-              <option value="0.5">50%</option>
-              <option value="0.75">75%</option>
-              <option value="1">100%</option>
-              <option value="1.25">125%</option>
-              <option value="1.5">150%</option>
-              <option value="2">200%</option>
+            <select
+              onChange={handleZoomChange}
+              value={zoomLevel.toString()}
+              className='bg-white'
+            >
+              <option value='0.5'>50%</option>
+              <option value='0.75'>75%</option>
+              <option value='1'>100%</option>
+              <option value='1.25'>125%</option>
+              <option value='1.5'>150%</option>
+              <option value='2'>200%</option>
             </select>
           </div>
           {/*quilljs toolbar */}
@@ -440,8 +503,7 @@ export default function Editor() {
             {/* font size control */}
             <div className='flex items-center gap-3 h-6 '>
               <div className='flex items-center gap-3 h-6'>
-                <Button variant='ghost' className='h-6 px-0'>
-                </Button>
+                <Button variant='ghost' className='h-6 px-0'></Button>
                 <select className='h-6 border border-gray-300 rounded bg-white'>
                   <option value='12'>12</option>
                   <option value='14'>14</option>
@@ -503,7 +565,8 @@ export default function Editor() {
                 <DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <span>Sub Menu</span>
+                      <Button variant='ghost' className='h-6 px-0'>
+                      </Button>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem>Sub Option 1</DropdownMenuItem>
@@ -518,36 +581,48 @@ export default function Editor() {
           </div>
         </div>
         {/* maintain min height equal to page size * 1.5 */}
-        <div className='pb-20 min-h-[calc(100vh-10rem)] flex justify-center pt-4 px-32 overflow-auto h-auto ' style={{
-          width: '100%', scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1'
-        }} >
+        <div
+          className='pb-20 min-h-[calc(100vh-10rem)] flex justify-center pt-4 px-32 overflow-auto h-auto '
+          style={{
+            width: '100%',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#888 #f1f1f1',
+          }}
+        >
           <div className=''>
-            <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
-              <div id='page-0' style={{ width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`, height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`, margin: `${pageConfig.margin}px` }} /> {/* quill editor */}
+            <div
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top left',
+              }}
+            >
+              <div
+                id='page-0'
+                style={{
+                  width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                  height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
+                  margin: `${pageConfig.margin}px`,
+                }}
+              />{' '}
+              {/* quill editor */}
             </div>
 
             {/* new page button */}
-            <Button variant='ghost' className='h-6 px-0' onClick={() => {
-              if (pageManager) {
-                pageManager.newJSXPage(document);
-              }
-            }}>
+            <Button
+              variant='ghost'
+              className='h-6 px-0'
+              onClick={() => {
+                if (pageManager) {
+                  pageManager.newJSXPage(document);
+                }
+              }}
+            >
               <PlusIcon className='w-4 h-4' />
             </Button>
           </div>
         </div>
       </div>
-      <div className='bg-blue-400 w-1/3 h-full flex flex-col'>
-        {/* video call */}
-        <div className='bg-red-400 h-1/3'>
-
-        </div>
-        {/* chat */}
-        <div className='bg-green-400 h-2/3'>
-
-        </div>
-      </div>
-    </div >
+    </div>
   );
 }
 
@@ -561,7 +636,6 @@ export default function Editor() {
 //       this.currentFormats = this.quill.getFormat();
 //     }
 //   });
-
 
 // format(format, params)
 // {
