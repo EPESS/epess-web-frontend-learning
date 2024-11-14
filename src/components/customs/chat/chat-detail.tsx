@@ -191,7 +191,7 @@ const ChatDetail = ({ roomId = "74189dc6-4371-40ca-aaa7-93efc4c3a6be" }: TChatDe
                     </div>
                 </div>
             </div> */}
-            <div className={cn('flex h-[90%] flex-col justify-end pt-[4.5rem]')}>
+            <div className={cn('flex h-[88%] flex-col justify-end')}>
                 <ScrollArea ref={scrollRef} className='h-[80vh]'>
                     <div>
                         {msgLoading && <div className='flex justify-center mt-10'><ScaleLoader /></div>}

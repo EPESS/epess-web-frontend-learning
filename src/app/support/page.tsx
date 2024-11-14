@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { MeetingClientImpl } from './components/MeetingClientImpl';
 import { isVideoCodec } from '@/lib/types';
-import Editor from './components/Editor';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,10 @@ import { cn } from '@/lib/utils';
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 import { useStore } from '@/hooks/use-store';
 import { ControlBar } from './components/ControlBar';
+import dynamic from 'next/dynamic';
+import ChatDetail from '@/components/customs/chat/chat-detail';
+
+const Editor = dynamic(() => import("../support/components/Editor"))
 
 export default function Component({
   searchParams = { hq: 'false', codec: 'vp9' },
@@ -81,8 +84,8 @@ export default function Component({
             user={user}
           />
         </div>
-        <div className='w-full h-2/3 flex-grow bg-blue-500'>
-          Message
+        <div className='w-full h-2/3 flex-grow'>
+          <ChatDetail />
         </div>
       </div>
     </div>

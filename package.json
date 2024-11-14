@@ -45,6 +45,7 @@
     "react-dom": "^18",
     "react-loading": "^2.0.3",
     "react-quilljs": "^2.0.4",
+    "react-resizable-panels": "^2.1.6",
     "react-spinners": "^0.14.1",
     "react-toastify": "^10.0.6",
     "sharp": "^0.33.5",

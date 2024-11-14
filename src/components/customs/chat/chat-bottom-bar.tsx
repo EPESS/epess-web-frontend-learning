@@ -92,7 +92,7 @@ export default function ChatBottomBar({ handleOnChange, loading = false }: TChat
 
 
     return (
-        <div className={cn('flex gap-3 h-[10%]')}>
+        <div className={cn('flex gap-3 h-[10%] border-t-2 border-gray-400/35')}>
             <div className='flex flex-col w-full'>
                 <div className='px-2 py-1 flex justify-between w-full items-center gap-2'>
                     <div className='flex cursor-pointer'>

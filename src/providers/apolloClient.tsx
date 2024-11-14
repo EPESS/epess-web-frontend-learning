@@ -9,7 +9,7 @@ export const clientWS = createClient({
   url: process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'https://api.epess.org/v1/graphql',
   on: {
       connecting: () => {
-          console.log("testt");
+          console.log("Still connectingggggggggggggggggggggg");
       },
       connected: () => {
           console.log('WebSocket connected successfully.');
