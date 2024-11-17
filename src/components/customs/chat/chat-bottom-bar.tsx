@@ -94,7 +94,7 @@ export default function ChatBottomBar({ handleOnChange, loading = false }: TChat
     return (
         <div className={cn('flex gap-3 h-[10%] border-t-2 border-gray-400/35')}>
             <div className='flex flex-col w-full'>
-                <div className='px-2 py-1 flex justify-between w-full items-center gap-2'>
+                <div className='flex justify-between items-center gap-2 px-2 w-full'>
                     <div className='flex cursor-pointer'>
                         {!message.trim() && (
                             <div
@@ -104,18 +104,18 @@ export default function ChatBottomBar({ handleOnChange, loading = false }: TChat
                                     'shrink-0'
                                 )}
                             >
-                                <div className='relative cursor-pointer flex w-full h-full'>
-                                    <Input onChange={(e) => handleSingleUploadFile(e.target.files)} type='file' className='h-full w-full z-10 cursor-pointer opacity-0 absolute top-0 left-0 right-0 bottom-0' />
-                                    <Paperclip size={22} className='m-auto cursor-pointer text-muted-foreground' />
+                                <div className='relative flex w-full h-full cursor-pointer'>
+                                    <Input onChange={(e) => handleSingleUploadFile(e.target.files)} type='file' className='top-0 right-0 bottom-0 left-0 z-10 absolute opacity-0 w-full h-full cursor-pointer' />
+                                    <Paperclip size={22} className='m-auto text-muted-foreground cursor-pointer' />
                                 </div>
                             </div>
                         )}
                     </div>
-
+                    
                     <AnimatePresence initial={false}>
                         <motion.div
                             key='input'
-                            className='w-full relative'
+                            className='relative w-full'
                             layout
                             initial={{ opacity: 0, scale: 1 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -138,7 +138,7 @@ export default function ChatBottomBar({ handleOnChange, loading = false }: TChat
                                 className='rounded-full min-h-0'
                             />
 
-                            <div className='absolute right-4 bottom-2'>
+                            <div className='right-4 bottom-2 absolute'>
                                 <EmojiPicker
                                     onChange={(value) => {
                                         setMessage(message + value);
@@ -151,13 +151,13 @@ export default function ChatBottomBar({ handleOnChange, loading = false }: TChat
                         </motion.div>
 
                         {uploadLoading && loading ?
-                            <div className='h-9 w-9 shrink-0'>
+                            <div className='w-9 h-9 shrink-0'>
                                 <MoonLoader size={25} className="w-full h-full" />
                             </div>
                             : message.trim() ? (
                                 <Button
                                     onClick={(e) => handleKeyClick(e)}
-                                    className='h-9 w-9 shrink-0'
+                                    className='w-9 h-9 shrink-0'
                                     variant='ghost'
                                     size='icon'
                                 >
@@ -166,7 +166,7 @@ export default function ChatBottomBar({ handleOnChange, loading = false }: TChat
                             ) : (
                                 <Button
                                     onClick={handleThumbsUp}
-                                    className='h-9 w-9 shrink-0'
+                                    className='w-9 h-9 shrink-0'
                                     variant='ghost'
                                     size='icon'
                                 >

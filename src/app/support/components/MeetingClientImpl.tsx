@@ -116,7 +116,7 @@ function MeetingClientImplCpn(props: {
     !connectionDetails
   ) {
     return (
-      <div className='flex justify-center items-center w-full h-full bg-zinc-900'>
+      <div className='flex justify-center items-center bg-zinc-900 w-full h-full'>
         <ReactLoading type='bars' />
       </div>
     );
@@ -220,17 +220,17 @@ function VideoConferenceComponent(props: {
         audio={props.userChoices.audioEnabled}
         onDisconnected={handleOnLeave}
         onError={handleError}
-        className='flex flex-col items-center justify-center w-full h-full'
+        className='flex flex-col justify-center items-center bg-white shadow-lg rounded-lg w-full h-full'
       >
         {isMeetingAndChatOpen && (
           <VideoConference SettingsComponent={SettingsMenu} />
         )}
 
         <RecordingIndicator />
-
+        {/* display control bar when chat is not open */}
         {!isMeetingAndChatOpen && (
           <ControlBar
-            className='flex flex-col gap-5 !border-none p-0 m-0'
+            className='flex flex-col gap-5 m-0 p-0 !border-none'
             vertical={true}
           />
         )}
@@ -318,11 +318,11 @@ const VideoConference = ({
   ]);
 
   return (
-    <div className='lk-video-conference !w-full' {...props}>
+    <div className='bg-white rounded-lg !w-full lk-video-conference' {...props}>
       {isWeb() && (
         <LayoutContextProvider value={layoutContext}>
-          <div className='lk-video-conference-inner flex flex-row'>
-            <div className='w-full'>
+          <div className='flex flex-row bg-white lk-video-conference-inner'>
+            <div className='bg-gray-50 drop-shadow-sm rounded-lg w-full'>
               {!focusTrack ? (
                 <div className='lk-grid-layout-wrapper'>
                   <GridLayout tracks={tracks}>
@@ -330,7 +330,7 @@ const VideoConference = ({
                   </GridLayout>
                 </div>
               ) : (
-                <div className='lk-focus-layout-wrapper'>
+                <div className='bg-white lk-focus-layout-wrapper'>
                   <FocusLayoutContainer>
                     <CarouselLayout tracks={carouselTracks}>
                       <ParticipantTile />

@@ -43,10 +43,10 @@ export default function Component({
   }
 
   return (
-    <div className='flex w-full h-screen overflow-hidden'>
+    <div className='flex gap-5 w-full h-screen overflow-hidden'>
       {/* Slice 1 with dynamic width */}
       <div
-        className={cn('transition-all duration-500 ease-in-out h-screen')}
+        className={cn('transition-all duration-1000 ease-in-out h-screen')}
         style={{
           // con lạy cụ tỷ lệ vàng
           width: isMeetingAndChatOpen
@@ -60,7 +60,7 @@ export default function Component({
       {/* Slice 2 with dynamic width */}
       <div
         className={cn(
-          'h-screen flex flex-col relative transition-all duration-500 ease-in-out'
+          'h-screen gap-5 flex flex-col relative z-10 transition-all duration-1000 ease-in-out'
         )}
         style={{
           width: isMeetingAndChatOpen
@@ -69,14 +69,17 @@ export default function Component({
         }}
       >
         <Button
-          className='absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 z-10 rounded-full h-8 w-8 p-0'
+          className='top-1/2 left-0 z-40 absolute p-0 rounded-full w-10 h-10 -translate-x-1/2 -translate-y-1/2'
           variant='outline'
           onClick={toggleMeetingAndChat}
         >
-          {isMeetingAndChatOpen ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          <ChevronLeftIcon className={cn(
+            "transition-transform duration-1000",
+            isMeetingAndChatOpen ? "rotate-180" : ""
+          )} />
         </Button>
 
-        <div className='flex-grow h-1/3'>
+        <div className='z-30 flex-grow drop-shadow-sm pt-2 rounded-lg h-1/3'>
           <MeetingClientImpl
             roomName={'yh3f-xc67'}
             hq={hq}
@@ -84,7 +87,7 @@ export default function Component({
             user={user}
           />
         </div>
-        <div className='w-full h-2/3 flex-grow'>
+        <div className='z-20 flex-grow bg-gray-50 drop-shadow-md rounded-lg w-full h-2/3'>
           <ChatDetail />
         </div>
       </div>

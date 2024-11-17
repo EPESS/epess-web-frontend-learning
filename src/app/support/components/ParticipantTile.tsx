@@ -167,11 +167,11 @@ export const ParticipantTile: (
                   />
                 )
               )}
-              <div className='lk-participant-placeholder'>
+              <div className='bg-white lk-participant-placeholder'>
                 <div className='w-[20%] aspect-square'>
                   <Avatar
                     draggable={false}
-                    className='select-none aspect-square w-[100%] h-[100%]'
+                    className='w-[100%] h-[100%] select-none aspect-square'
                   >
                     <AvatarImage
                       src={
@@ -211,7 +211,7 @@ export const ParticipantTile: (
                     </>
                   )}
                 </div>
-                <ConnectionQualityIndicator className='lk-participant-metadata-item' />
+                <ConnectionQualityIndicator className='bg-white lk-participant-metadata-item' />
               </div>
             </>
           )}

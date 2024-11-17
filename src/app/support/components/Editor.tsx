@@ -8,17 +8,21 @@ import { useSubscription } from '@apollo/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
+  AlignCenterIcon,
+  AlignJustifyIcon,
+  AlignLeftIcon,
+  AlignRightIcon,
   Baseline,
   BoldIcon,
   CodeIcon,
+  DownloadIcon,
   FileIcon,
+  FolderOpenIcon,
   ImageIcon,
   ItalicIcon,
   LinkIcon,
   MoreHorizontalIcon,
-  PlusIcon,
   RemoveFormatting,
-  RemoveFormattingIcon,
   SaveIcon,
   StrikethroughIcon,
   UnderlineIcon,
@@ -28,6 +32,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -37,7 +42,6 @@ import Toolbar from 'quill/modules/toolbar';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
 export const EDITOR_TOOLBAR_BINDINGS = [
@@ -123,7 +127,9 @@ export class PageManager {
   public _toolbar: Toolbar | undefined;
   public pages: Quill[] = [];
   public _currentPageIndex: number = 0;
+  public subscription: any;
 
+  
   get currentPageIndex() {
     return this._currentPageIndex;
   }
@@ -379,6 +385,16 @@ export default function Editor() {
   const [pageManager, setPageManager] = useState<PageManager | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
+  // const [size, setSize] = useState('normal');
+
+
+  // useEffect(() => {
+
+  //   const newDiv = document.createElement('div');
+  //   newDiv.className = `ql-size ${size}`;
+  //   // append new div to body
+  //   document.body.appendChild(newDiv);
+  // }, [size]);
 
   useEffect(() => {
     // initialize page config
@@ -422,43 +438,62 @@ export default function Editor() {
   //   }
   // };ds
   return (
-    <div className='h-full w-full flex'>
+    <div className='flex w-full h-full'>
       {/* editor */}
-      <div className='w-full flex flex-col max-h-screen h-screen'>
+      <div className='flex flex-col w-full h-screen max-h-screen'>
         {/* tool bar */}
-        <div id='toolbar' className='flex flex-col z-10'>
-          <div className='bg-white h-14 w-full flex items-center gap-2 p-2'>
+        <div id='toolbar' className='z-10 flex flex-col'>
+          <div className='flex items-center gap-2 bg-white p-2 w-full h-14'>
             {/* logo */}
-            <Avatar className='w-10 h-10'>
+            <Avatar className='mr-2 w-10 h-10'>
               <AvatarImage src='https://objects.epess.org/epess-public/main_icon.png' />
               <AvatarFallback>CN</AvatarFallback>
             </Avatar>
             {/* title */}
-            <div className='flex flex-col '>
+            <div className='flex flex-col'>
               {/* File name input */}
               <div className='flex items-center gap-4 h-6'>
                 <Input className='h-6' type='text' placeholder='Untitled' />
-                <Button variant='outline' className='h-6'>
-                  {/* save icon and indicator */}
-                  <SaveIcon className='w-4 h-4' />
-                  <span className='w-4 h-4 rounded-full bg-green-500 animate-pulse'></span>
-                </Button>
+                 <span className='bg-green-500 p-0 rounded-full w-4 h-4'></span>
               </div>
               {/* Menu bar */}
               <div className='flex items-center gap-3 h-6'>
-                <Button variant='ghost' className='h-6 px-0'>
-                  File
-                </Button>
-                <Button variant='ghost' className='h-6 px-0'>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='ghost' className='px-0 h-6'>
+                      File
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>
+                      <FileIcon className="mr-2 w-4 h-4" />
+                      New
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <FolderOpenIcon className="mr-2 w-4 h-4" />
+                      Open
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <SaveIcon className="mr-2 w-4 h-4" />
+                      Save
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <DownloadIcon className="mr-2 w-4 h-4" />
+                      Export
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant='ghost' className='px-0 h-6'>
                   Edit
                 </Button>
-                <Button variant='ghost' className='h-6 px-0'>
+                <Button variant='ghost' className='px-0 h-6'>
                   View
                 </Button>
-                <Button variant='ghost' className='h-6 px-0'>
+                <Button variant='ghost' className='px-0 h-6'>
                   Share
                 </Button>
-                <Button variant='ghost' className='h-6 px-0'>
+                <Button variant='ghost' className='px-0 h-6'>
                   Help
                 </Button>
               </div>
@@ -468,7 +503,7 @@ export default function Editor() {
             {/* test apply delta */}
             {/* <Button
               variant='ghost'
-              className='h-6 px-0'
+              className='px-0 h-6'
               onClick={() => {
                 if (pageManager) {
                   pageManager.applyDelta(
@@ -502,98 +537,99 @@ export default function Editor() {
             </select>
           </div> */}
           {/*quilljs toolbar */}
-          <div id='toolbar' className='flex justify-center items-center gap-3 w-full bg-gray-100 shadow-2xl rounded-3xl p-1 mb-1 mt-1'>
+          <div id='toolbar' className='flex justify-center items-center gap-3 bg-gray-100 shadow-2xl mt-1 mb-1 p-1 rounded-3xl w-full'>
             {/* caption control eg normal, h1, h2, h3, h4, h5, h6  */}
             <Separator orientation="vertical" />
             <div>
-              <Select>
-                <SelectTrigger className="h-6 w-[100px]">
-                  <SelectValue placeholder="Normal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem className='ql-normal' value='normal'>Normal</SelectItem>
-                  <SelectItem className='ql-h1' value='h1'>Heading 1</SelectItem>
-                  <SelectItem className='ql-h2' value='h2'>Heading 2</SelectItem>
-                  <SelectItem className='ql-h3' value='h3'>Heading 3</SelectItem>
-                  <SelectItem className='ql-h4' value='h4'>Heading 4</SelectItem>
-                  <SelectItem className='ql-h5' value='h5'>Heading 5</SelectItem>
-                  <SelectItem className='ql-h6' value='h6'>Heading 6</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* use select to change header */}
+              <select className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-header focus:outline-none'>
+                <option value=''>Normal</option>
+                <option value='h1'>Heading 1</option>
+                <option value='h2'>Heading 2</option>
+                <option value='h3'>Heading 3</option>
+                <option value='h4'>Heading 4</option>
+                <option value='h5'>Heading 5</option>
+                <option value='h6'>Heading 6</option>
+              </select>
             </div>
+
             <Separator orientation="vertical" />
-            {/* font family control */}
-            <div>
-              {/* use font size style */}
-              <Select>
-                <SelectTrigger className="h-6 w-[100px]">
-                  <SelectValue placeholder="Font" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='Courier New'>Courier New</SelectItem>
-                  <SelectItem value='Georgia'>Georgia</SelectItem>
-                  <SelectItem value='Times New Roman'>Times New Roman</SelectItem>
-                  <SelectItem value='Verdana'>Verdana</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Separator orientation="vertical" />
-            {/* font size control */}
-          
-            <div className='flex items-center gap-3 h-6 '>
+
+            <div className='flex items-center gap-3 h-6'>
           
             {/* font size */}
                 {/* add default value is large */}
-                <Select>
-                  <SelectTrigger className="h-6 w-[100px]">
-                    <SelectValue placeholder="Size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="small">small</SelectItem>
-                    <SelectItem value="false">normal</SelectItem>
-                    <SelectItem value="large" >large</SelectItem>
-                    <SelectItem value="huge">huge</SelectItem>
-                  </SelectContent>
-                </Select>
-           
+                <select className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-size focus:outline-none'>
+                  <option value="small">small</option>
+                  <option value="">normal</option>
+                  <option value="large">large</option>
+                  <option value="huge">huge</option>
+                </select>
+
             </div>
             <Separator orientation="vertical" />
             {/* clear format */}
             <div>
-              <Button variant='ghost' className='ql-clean h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6 ql-clean'>
                 <RemoveFormatting className='w-4 h-4' />
               </Button>
             </div>
             {/* bold */}
             <div className='flex items-center gap-3 h-6'>
-              <Button variant='ghost' className='ql-bold h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6 ql-bold'>
                 <BoldIcon className='w-4 h-4' />
               </Button>
             </div>
             <div>
-              <Button variant='ghost' className='ql-italic h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6 ql-italic'>
                 <ItalicIcon className='w-4 h-4' />
               </Button>
             </div>
             <div>
-              <Button variant='ghost' className='ql-underline h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6 ql-underline'>
                 <UnderlineIcon className='w-4 h-4' />
               </Button>
             </div>
             <Separator orientation="vertical" />
+            {/* align left */}
+            {/* [{ align: '' }, { align: 'center' }, { align: 'right' }, { align: 'justify' }], */}
+            {/* change align here */}
+
             <div>
-              <Button variant='ghost' className='ql-strike h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6 ql-align' value="">
+                <AlignLeftIcon className='w-4 h-4' />
+              </Button>
+            </div>
+            <div>
+              <Button variant='ghost' className='px-0 h-6 ql-align' value="center">
+                <AlignCenterIcon className='w-4 h-4' />
+              </Button>
+            </div>
+            <div>
+              <Button variant='ghost' className='px-0 h-6 ql-align' value="right">
+                <AlignRightIcon className='w-4 h-4' />
+              </Button>
+            </div>
+            <div>
+              <Button variant='ghost' className='px-0 h-6 ql-align' value="justify">
+                <AlignJustifyIcon className='w-4 h-4' />
+              </Button>
+            </div>
+            <Separator orientation="vertical" />
+            {/* strike */}
+            <div>
+              <Button variant='ghost' className='px-0 h-6 ql-strike'>
                 <StrikethroughIcon className='w-4 h-4' />
               </Button>
             </div>
             {/* text color picker */}
             <div>
-              <Button variant='ghost' className='h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6'>
                 <Baseline className='w-4 h-4' />
                 {/* color picker */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant='ghost' className='h-6 px-0'>
+                    <Button variant='ghost' className='px-0 h-6'>
                       <MoreHorizontalIcon className='w-4 h-4' />
                     </Button>
                   </PopoverTrigger>
@@ -607,26 +643,26 @@ export default function Editor() {
             </div>
             {/* hyperlink */}
             <div>
-              <Button variant='ghost' className='h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6'>
                 <LinkIcon className='w-4 h-4' />
               </Button>
             </div>
             {/* insert image */}
             <div>
-              <Button variant='ghost' className='h-6 px-0'>
+              <Button variant='ghost' className='px-0 h-6'>
                 <ImageIcon className='w-4 h-4' />
               </Button>
             </div>
             {/* code block */}
             <div>
-              <Button variant='ghost' className='ql-code-block h-6 px-0'>
+              <Button variant='ghost' className='ql-code-block px-0 h-6'>
                 <CodeIcon className='w-4 h-4' />
               </Button>
             </div>
             {/* more options */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant='ghost' className='h-6 px-0'>
+                <Button variant='ghost' className='px-0 h-6'>
                   <MoreHorizontalIcon className='w-4 h-4' />
                 </Button>
               </DropdownMenuTrigger>
@@ -634,7 +670,7 @@ export default function Editor() {
                 <DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <Button variant='ghost' className='h-6 px-0'></Button>
+                      <Button variant='ghost' className='px-0 h-6'></Button>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem>Sub Option 1</DropdownMenuItem>
@@ -649,9 +685,9 @@ export default function Editor() {
           </div>
         </div>
         {/* maintain min height equal to page size * 1.5 */}
-        <div className='z-0 bg-gray-50 flex justify-center pt-4 px-32 h-screen overflow-y-scroll no-scrollbar rounded-lg'>
+        <div className='z-0 flex justify-center bg-gray-50 px-20 pt-4 rounded-lg w-full h-screen overflow-y-scroll no-scrollbar'>
           <div
-            className='overflow-auto min-h-full pb-56 no-scrollbar'
+            className='pb-56 min-h-full overflow-x-hidden overflow-y-auto no-scrollbar'
             style={{
               transform: `scale(${zoomLevel})`,
               transformOrigin: 'top left',
@@ -659,7 +695,7 @@ export default function Editor() {
           >
             <div
               id='page-0'
-              className='overflow-auto min-h-full bg-white drop-shadow-lg'
+              className='bg-white drop-shadow-lg min-h-full overflow-x-hidden overflow-y-auto'
               style={{
                 width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
                 height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,

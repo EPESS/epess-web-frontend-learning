@@ -88,7 +88,7 @@ export function ControlBar({
     visibleControls.screenShare ??= localPermissions.canPublish;
   }
 
-  const htmlProps = mergeProps({ className: 'lk-control-bar' }, props);
+  const htmlProps = mergeProps({ className: 'lk-control-bar z-0' }, props);
 
   const {
     saveAudioInputEnabled,
@@ -113,7 +113,7 @@ export function ControlBar({
     <>
       <div {...htmlProps}>
         {visibleControls.microphone && (
-          <div className='lk-button-group flex flex-col items-center justify-center rounded-lg'>
+          <div className='flex flex-col justify-center items-center rounded-lg lk-button-group'>
             <TrackToggle
               source={Track.Source.Microphone}
               showIcon={true}
@@ -124,9 +124,9 @@ export function ControlBar({
                   error,
                 })
               }
-              className='w-full !rounded-none !rounded-tr-lg !rounded-tl-lg'
+              className='!rounded-none !rounded-tl-lg !rounded-tr-lg w-full'
             />
-            <div className='lk-button-group-menu vertical bg-zinc-900 w-full flex items-center justify-center rounded-b-lg'>
+            <div className='flex justify-center items-center bg-zinc-900 rounded-b-lg w-full lk-button-group-menu vertical'>
               <MediaDeviceMenu
                 kind='audioinput'
                 onActiveDeviceChange={(_kind, deviceId) =>
@@ -137,7 +137,7 @@ export function ControlBar({
           </div>
         )}
         {visibleControls.camera && (
-          <div className='lk-button-group flex flex-col items-center justify-center'>
+          <div className='flex flex-col justify-center items-center lk-button-group'>
             <TrackToggle
               source={Track.Source.Camera}
               showIcon={true}
@@ -145,9 +145,9 @@ export function ControlBar({
               onDeviceError={(error) =>
                 onDeviceError?.({ source: Track.Source.Camera, error })
               }
-              className='w-full !rounded-none !rounded-tr-lg !rounded-tl-lg'
+              className='!rounded-none !rounded-tl-lg !rounded-tr-lg w-full'
             />
-            <div className='lk-button-group-menu vertical bg-zinc-900 w-full flex items-center justify-center rounded-b-lg'>
+            <div className='flex justify-center items-center bg-zinc-900 rounded-b-lg w-full lk-button-group-menu vertical'>
               <MediaDeviceMenu
                 kind='videoinput'
                 onActiveDeviceChange={(_kind, deviceId) =>
@@ -158,7 +158,7 @@ export function ControlBar({
           </div>
         )}
         {visibleControls.leave && (
-          <DisconnectButton className='!bg-zinc-800 text-[#f91f31] border border-solid border-[#f91f31] hover:bg-[#f91f31] hover:text-white'>
+          <DisconnectButton className='border-[#f91f31] !bg-zinc-800 hover:bg-[#f91f31] border border-solid text-[#f91f31] hover:text-white'>
             <LeaveIcon />
           </DisconnectButton>
         )}
@@ -210,7 +210,7 @@ export function ControlBar({
           </div>
         )}
         {visibleControls.leave && (
-          <DisconnectButton className='!bg-zinc-800 text-[#f91f31] border border-solid border-[#f91f31] hover:bg-[#f91f31] hover:text-white'>
+          <DisconnectButton className='border-[#f91f31] !bg-zinc-800 hover:bg-[#f91f31] border border-solid text-[#f91f31] hover:text-white'>
             <LeaveIcon />
           </DisconnectButton>
         )}
@@ -226,6 +226,7 @@ const is430pxStyle = `
   background-color: #27272a;
   font-size: 12px;
   font-weight: bold;
+  z-index: 20;
 }
 .lk-media-device-select [data-lk-active=true]>.lk-button {
   color: #fff;
