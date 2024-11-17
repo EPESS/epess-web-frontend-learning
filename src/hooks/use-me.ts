@@ -1,6 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 import { create } from 'zustand';
 import { useEffect } from 'react';
+import { useStore } from './use-store';
 
 interface MeStore {
   user: User | null;
@@ -30,7 +31,7 @@ export const useMeStore = create<MeStore>((set) => ({
 }));
 
 export const useMe = () => {
-  const userData = useMeStore((state) => state.user);
+  const userData = useStore(useMeStore, (state) => state.user);
   const { data: user, loading: userLoading } = useQuery<{ me: User }>(GET_ME, {
     skip: !!userData,
   });

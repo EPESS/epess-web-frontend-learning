@@ -1,12 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import QuillTableBetter from 'quill-table-better';
 import 'quill-table-better/dist/quill-table-better.css';
-import { gql } from '@apollo/client';
-import { useSubscription } from '@apollo/client';
+import { ApolloClient, gql } from '@apollo/client';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { clientWS as createClientWS, createApolloClient } from '@/providers/apolloClient'
 import {
   AlignCenterIcon,
   AlignJustifyIcon,
@@ -43,6 +45,8 @@ import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@clerk/nextjs';
+import { Client } from 'graphql-ws';
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -121,6 +125,8 @@ export class DeltaManager {
     return this.delta;
   }
 }
+
+const DOC_ID = 'test';
 export class PageManager {
   public config: PageConfiguration;
   private Quill: typeof Quill;
@@ -128,8 +134,10 @@ export class PageManager {
   public pages: Quill[] = [];
   public _currentPageIndex: number = 0;
   public subscription: any;
+  public clientHTTP: ApolloClient<any>;
+  public clientWS: Client;
+  public deltaQueue: DeltaQueue;
 
-  
   get currentPageIndex() {
     return this._currentPageIndex;
   }
@@ -144,12 +152,32 @@ export class PageManager {
     });
   }
 
+  subscribeDocument = async (documentId: string) => {
+    for await (const result of this.clientWS.iterate<{ document: { delta: string, documentId: string, pageIndex: number } }>({
+      query: `subscription Document {
+  document(documentId: "${documentId}") {
+      delta
+      documentId
+      pageIndex
+  }
+}`
+    })) {
+      if (result?.data?.document) {
+        // this.pages[result?.data?.document?.pageIndex].updateContents(JSON.parse(result.data?.document.delta), Quill.sources.SILENT);
+        this.applyDelta(JSON.parse(result.data?.document.delta), result?.data?.document?.pageIndex, Quill.sources.API);
+      }
+    }
+  }
 
-  constructor(quill: Quill) {
+  constructor(quill: Quill, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
     // initialize config
     this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
     this.Quill = Quill; // Quill class
     this.pushToPageList(quill);
+    this.clientHTTP = clientHTTP;
+    this.clientWS = clientWS;
+    this.deltaQueue = deltaQueue;
+    this.subscribeDocument(DOC_ID)
     // this.deltaManager = new DeltaManager(quill.getContents());
   }
   static newQuill(container: HTMLElement) {
@@ -269,16 +297,33 @@ export class PageManager {
   pushToPageList(page: Quill) {
     // pre push section
     // register event listener
-    page.on(EVENT_NAMES.TEXT_CHANGE, (eventName, ...args) => {
+    page.on(EVENT_NAMES.TEXT_CHANGE, (delta, oldDelta, source) => {
+      if (source === Quill.sources.SILENT) {
+        return;
+      }
+      if (source === Quill.sources.API) {
+        return;
+      }
+      if (!(delta instanceof Delta)) {
+        return;
+      }
       if (page.container.id !== 'page-0' && page.getLength() === 1) {
         console.log('delete page');
         console.log(page.container.id);
         this.deletePage(this.pages.indexOf(page));
       }
+
+
+      this.deltaQueue.push({
+        delta: delta,
+        documentId: DOC_ID,
+        pageIndex: this.currentPageIndex
+      });
+
     });
     // catch scroll event
     page.on(EVENT_NAMES.SCROLL_UPDATE, (eventName, ...args) => {
-      console.log(eventName, args);
+      // console.log(eventName, args);
     });
 
     page.on(EVENT_NAMES.EDITOR_CHANGE, (eventName, ...args) => {
@@ -381,10 +426,62 @@ export class PageManager {
   }
 }
 
+export interface DocumentDeltaInput {
+  delta: Delta;
+  documentId: string;
+  pageIndex: number;
+}
+class DeltaQueue {
+  private queue: DocumentDeltaInput[] = [];
+
+  constructor(private clientHTTP: ApolloClient<any>) {
+
+  }
+
+  async emit(): Promise<void> {
+    while (this.queue.length > 0) {
+      const data = this.pop();
+      console.log(data);
+      // handle send delta to server  
+      await this.clientHTTP.mutate({
+        mutation: gql`
+          mutation UpdateDocument($data: DocumentDeltaInput!) {
+            updateDocument(data: $data) {
+              delta
+              documentId 
+              pageIndex
+            }
+          }
+        `,
+        variables: {
+          data: data
+        }
+      });
+    }
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await this.emit();
+  }
+
+  push(delta: DocumentDeltaInput) {
+    this.queue.push(delta);
+  }
+
+  pop() {
+    return this.queue.shift();
+  }
+}
+
 export default function Editor() {
   const [pageManager, setPageManager] = useState<PageManager | null>(null);
+  const { sessionId } = useAuth();
+  const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
+  const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
+  const deltaQueue = new DeltaQueue(clientHTTP);
   const [zoomLevel, setZoomLevel] = useState(1);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
+  (async () => {
+    deltaQueue.emit();
+  })();
   // const [size, setSize] = useState('normal');
 
 
@@ -404,7 +501,10 @@ export default function Editor() {
           const pageElement = document.getElementById('page-0');
           if (pageElement && !pageManager) {
             const newPageManager = new PageManager(
-              PageManager.newQuill(pageElement)
+              PageManager.newQuill(pageElement),
+              clientHTTP,
+              clientWS,
+              deltaQueue
             );
             setPageManager(newPageManager);
             // attach toolbar to page
@@ -421,7 +521,8 @@ export default function Editor() {
     });
 
     return () => observer.disconnect();
-  }, [pageManager]);
+  }, [clientHTTP, clientWS, pageManager, deltaQueue]);
+
 
   // const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
   //   setZoomLevel(parseFloat(event.target.value));
@@ -454,7 +555,7 @@ export default function Editor() {
               {/* File name input */}
               <div className='flex items-center gap-4 h-6'>
                 <Input className='h-6' type='text' placeholder='Untitled' />
-                 <span className='bg-green-500 p-0 rounded-full w-4 h-4'></span>
+                <span className='bg-green-500 p-0 rounded-full w-4 h-4'></span>
               </div>
               {/* Menu bar */}
               <div className='flex items-center gap-3 h-6'>
@@ -556,15 +657,15 @@ export default function Editor() {
             <Separator orientation="vertical" />
 
             <div className='flex items-center gap-3 h-6'>
-          
-            {/* font size */}
-                {/* add default value is large */}
-                <select className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-size focus:outline-none'>
-                  <option value="small">small</option>
-                  <option value="">normal</option>
-                  <option value="large">large</option>
-                  <option value="huge">huge</option>
-                </select>
+
+              {/* font size */}
+              {/* add default value is large */}
+              <select className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-size focus:outline-none'>
+                <option value="small">small</option>
+                <option value="">normal</option>
+                <option value="large">large</option>
+                <option value="huge">huge</option>
+              </select>
 
             </div>
             <Separator orientation="vertical" />

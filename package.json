@@ -52,6 +52,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "tinykeys": "^3.0.0",
+    "ws": "^8.18.0",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
@@ -60,6 +61,7 @@
     "@types/quill": "^2.0.14",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/ws": "^8.5.13",
     "eslint": "^8",
     "eslint-config-next": "14.2.16",
     "postcss": "^8",

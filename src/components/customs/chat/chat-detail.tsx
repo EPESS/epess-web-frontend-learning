@@ -10,7 +10,7 @@ import { useGetChatRoomDetail, Message } from '@/app/api/message/roomDetail'
 import { clientWS } from '@/providers/apolloClient'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import ToolTipCustom from '../tool-tip'
-import { useUser } from '@clerk/nextjs'
+import { useAuth, useUser } from '@clerk/nextjs'
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 import { MessageCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -28,6 +28,7 @@ const ChatDetail = ({ roomId = "74189dc6-4371-40ca-aaa7-93efc4c3a6be" }: TChatDe
     const { isMeetingAndChatOpen } = useToggleMeetingAndChat()
 
     const { user } = useUser()
+    const { sessionId } = useAuth()
 
     const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,7 +80,7 @@ const ChatDetail = ({ roomId = "74189dc6-4371-40ca-aaa7-93efc4c3a6be" }: TChatDe
     }
 
     const subscribeMessages = async () => {
-        for await (const result of clientWS.iterate<{ messageSent: Message }>({
+        for await (const result of clientWS(sessionId!).iterate<{ messageSent: Message }>({
             query: `subscription MessageSent {
     messageSent(chatRoomId: "${roomId}") {
         chatRoomId
@@ -218,19 +219,19 @@ const ChatDetail = ({ roomId = "74189dc6-4371-40ca-aaa7-93efc4c3a6be" }: TChatDe
             </div>
         ) : (
             // use opacity component to control opacity of the component
-                <div className='flex flex-col justify-start items-center bg-white w-full h-full'>
-                    {!isMeetingAndChatOpen && incomingMessages > 0 && (
-                    <div 
+            <div className='flex flex-col justify-start items-center bg-white w-full h-full'>
+                {!isMeetingAndChatOpen && incomingMessages > 0 && (
+                    <div
                         onMouseEnter={() => setShowTooltip(true)}
                         onMouseLeave={() => setShowTooltip(false)}
                     >
                         <TooltipProvider>
-                        <Tooltip open={showTooltip}>
-                            <TooltipTrigger asChild>
-                                <div className='flex justify-center items-center bg-gray-100 shadow-sm mb-2 rounded-lg w-12 h-10'>
-                                    <MessageCircle size={20} />
-                                </div>
-                            </TooltipTrigger>
+                            <Tooltip open={showTooltip}>
+                                <TooltipTrigger asChild>
+                                    <div className='flex justify-center items-center bg-gray-100 shadow-sm mb-2 rounded-lg w-12 h-10'>
+                                        <MessageCircle size={20} />
+                                    </div>
+                                </TooltipTrigger>
                                 <TooltipContent>
                                     <p>Có {incomingMessages - 1} tin nhắn mới</p>
                                 </TooltipContent>
