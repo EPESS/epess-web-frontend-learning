@@ -5,29 +5,35 @@ import { useAuth } from '@clerk/nextjs';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { createClient } from 'graphql-ws';
 
-export const clientWS = createClient({
-  url: process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'https://api.epess.org/v1/graphql',
+const API_URL = process.env.NEXT_PUBLIC_ENVIRONMENT === 'development'
+? process.env.NEXT_PUBLIC_GRAPHQL_DEV_URL
+: process.env.NEXT_PUBLIC_GRAPHQL_URL;
+
+
+
+export const clientWS = (sessionId: string | null) => createClient({
+  url: (API_URL ?? 'https://api.epess.org/v1/graphql'),
+  connectionParams: {
+      'x-session-id': sessionId ? sessionId : '',
+  },
   on: {
-      connecting: () => {
-          console.log("Still connectingggggggggggggggggggggg");
-      },
-      connected: () => {
-          console.log('WebSocket connected successfully.');
-      },
-      error: (error) => {
-          console.error('WebSocket connection error:', error);
-      },
-      closed: () => {
-          console.log('WebSocket connection closed.');
-      }
+    connecting: () => {
+      console.log("Connecting to WebSocket...");
+    },
+    connected: () => {
+      console.log('WebSocket connected successfully.');
+    },
+    error: (error) => {
+      console.error('WebSocket connection error:', error);
+    },
+    closed: () => {
+      console.log('WebSocket connection closed.');
+    }
   }
 });
 
 const uploadLink = createUploadLink({
-  uri:
-    process.env.NEXT_PUBLIC_ENVIRONMENT === 'development'
-      ? process.env.NEXT_PUBLIC_GRAPHQL_DEV_URL
-      : process.env.NEXT_PUBLIC_GRAPHQL_URL,
+  uri: API_URL ?? 'https://api.epess.org/v1/graphql',
   headers: {
     'x-apollo-operation-name': 'GraphQL',
   },
@@ -55,5 +61,6 @@ const ApolloClientProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 ApolloClientProvider.displayName = 'ApolloClientProvider';
+
 
 export default ApolloClientProvider;
