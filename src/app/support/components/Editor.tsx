@@ -286,12 +286,11 @@ export class PageManager {
   }
 
   // example: applyDelta(delta, 0, Quill.sources.USER)
-  applyDelta(delta: Delta, pageIndex: number, source?: EmitterSource) {
+  async applyDelta(delta: Delta, pageIndex: number, source?: EmitterSource) {
     if (!source) {
       source = Quill.sources.SILENT;
     }
     this.pages[pageIndex].updateContents(delta, source);
-    // todo: update delta manager
   }
 
   pushToPageList(page: Quill) {
@@ -441,7 +440,10 @@ class DeltaQueue {
   async emit(): Promise<void> {
     while (this.queue.length > 0) {
       const data = this.pop();
+      if (!data) continue;
       console.log(data);
+      const { delta, documentId, pageIndex } = data;
+      const deltaStr = JSON.stringify(delta);
       // handle send delta to server  
       await this.clientHTTP.mutate({
         mutation: gql`
@@ -454,7 +456,11 @@ class DeltaQueue {
           }
         `,
         variables: {
-          data: data
+          data: {
+            delta: deltaStr,
+            documentId,
+            pageIndex
+          }
         }
       });
     }
