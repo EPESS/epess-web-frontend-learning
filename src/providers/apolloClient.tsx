@@ -62,4 +62,5 @@ const ApolloClientProvider = ({ children }: { children: React.ReactNode }) => {
 
 ApolloClientProvider.displayName = 'ApolloClientProvider';
 
+
 export default ApolloClientProvider;
