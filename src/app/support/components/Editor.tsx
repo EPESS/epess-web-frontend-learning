@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, MouseEventHandler, useEffect, useMemo, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import QuillTableBetter from 'quill-table-better';
 import 'quill-table-better/dist/quill-table-better.css';
@@ -47,6 +47,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@clerk/nextjs';
 import { Client } from 'graphql-ws';
+import Ruler from './Ruler';
+import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -221,6 +224,7 @@ export class PageManager {
   }
 
   newJSXPage(document: Document) {
+    // padding size
     const { width, height } = PAGE_SIZES[this.config.pageSize];
     const newPage = document.createElement('div');
     newPage.id = `page-${this.pages.length}`;
@@ -477,14 +481,37 @@ class DeltaQueue {
   }
 }
 
+const getPaddingSize = (size: string) => {
+  const paddingSize = parseInt(size);
+  const style = {
+    10: 'px-10',
+    14: 'px-14',
+    24: 'px-24',
+    28: 'px-28',
+    32: 'px-32',
+    36: 'px-36',
+    40: 'px-40',
+    48: 'px-48'
+  }
+  return style[paddingSize] || 'px-10';
+}
+
 export default function Editor() {
   const [pageManager, setPageManager] = useState<PageManager | null>(null);
+  const [paddingSize, setPaddingSize] = useState('10');
   const { sessionId } = useAuth();
   const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
   const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
   const deltaQueue = new DeltaQueue(clientHTTP);
   const [zoomLevel, setZoomLevel] = useState(1);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
+  const [headerValue, setHeaderValue] = useState('default');
+  const [showHeaders, setShowHeaders] = useState(false);
+  const [selectedHeader, setSelectedHeader] = useState<string>("Normal");
+  const handleSelectHeader = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log(event.target.value);
+    setHeaderValue(event.target.value);
+  }
   (async () => {
     deltaQueue.emit();
   })();
@@ -646,24 +673,123 @@ export default function Editor() {
           {/*quilljs toolbar */}
           <div id='toolbar' className='flex justify-center items-center gap-3 bg-gray-100 shadow-2xl mt-1 mb-1 p-1 rounded-3xl w-full'>
             {/* caption control eg normal, h1, h2, h3, h4, h5, h6  */}
+            <div className='flex flex-col items-center gap-3 h-6'>
+              <Button variant='ghost' className='px-0 h-6 ql-header' value="">
+                <span className='ql-header'>Normal</span>
+              </Button>
+
+            </div>
+            {/* select will change padding option of the page have 10, 12, 14, 16, 18, 20, 24, 36, 48 */}
+            <div className='flex items-center gap-3 h-6'>
+              <Select onValueChange={(value) => setPaddingSize(value)} defaultValue="10">
+                <SelectTrigger className="h-6">
+                  <SelectValue placeholder="Chọn kích thước" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="14">14</SelectItem>
+                  <SelectItem value="24">24</SelectItem>
+                  <SelectItem value="28">28</SelectItem>
+                  <SelectItem value="32">32</SelectItem>
+                  <SelectItem value="36">36</SelectItem>
+                  <SelectItem value="40">40</SelectItem>
+                  <SelectItem value="48">48</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Separator orientation="vertical" />
             <div>
               {/* use select to change header */}
-              <select className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-header focus:outline-none'>
-                <option value=''>Normal</option>
-                <option value='h1'>Heading 1</option>
-                <option value='h2'>Heading 2</option>
-                <option value='h3'>Heading 3</option>
-                <option value='h4'>Heading 4</option>
-                <option value='h5'>Heading 5</option>
-                <option value='h6'>Heading 6</option>
+              <select 
+                className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-header focus:outline-none'
+                value={headerValue}
+                onChange={handleSelectHeader}
+              >
+                <option value="">Normal</option>
+                <option value="h1">Heading 1</option>
+                <option value="h2">Heading 2</option>
+                <option value="h3">Heading 3</option>
+                <option value="h4">Heading 4</option>
+                <option value="h5">Heading 5</option>
+                <option value="h6">Heading 6</option>
               </select>
+              {/* <div className="relative">
+                <Button 
+                  variant='ghost' 
+                  className='px-0 h-6'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowHeaders(!showHeaders);
+                  }}
+                >
+                  {selectedHeader || "Header"}
+                </Button>
+                {showHeaders && (
+                  <div 
+                    className="z-50 absolute flex flex-col bg-white shadow-lg border rounded-md min-w-[120px]"
+                  >
+                    <Button 
+                      variant='ghost' 
+                      className='justify-start px-2 h-6 ql-header' 
+                      value="h1"
+                      onClick={() => setSelectedHeader("Heading 1")}
+                    >
+                      Heading 1
+                    </Button>
+                    <Button 
+                      variant='ghost' 
+                      className='justify-start px-2 h-6 ql-header' 
+                      value="h2"
+                      onClick={() => setSelectedHeader("Heading 2")}
+                    >
+                      Heading 2
+                    </Button>
+                    <Button 
+                      variant='ghost' 
+                      className='justify-start px-2 h-6 ql-header' 
+                      value="h3"
+                      onClick={() => setSelectedHeader("Heading 3")}
+                    >
+                      Heading 3
+                    </Button>
+                    <Button 
+                      variant='ghost' 
+                      className='justify-start px-2 h-6 ql-header' 
+                      value="h4"
+                      onClick={() => setSelectedHeader("Heading 4")}
+                    >
+                      Heading 4
+                    </Button>
+                    <Button 
+                      variant='ghost' 
+                      className='justify-start px-2 h-6 ql-header' 
+                      value="h5"
+                      onClick={() => setSelectedHeader("Heading 5")}
+                    >
+                      Heading 5
+                    </Button>
+                    <Button 
+                      variant='ghost' 
+                      className='justify-start px-2 h-6 ql-header' 
+                      value="h6"
+                      onClick={() => setSelectedHeader("Heading 6")}
+                    >
+                      Heading 6
+                    </Button>
+                  </div>
+                )}
+              </div> */}
+              {/* Add click outside listener */}
+              {showHeaders && (
+                <div
+                  className="z-40 fixed inset-0"
+                  onClick={() => setShowHeaders(false)}
+                />
+              )}
+
             </div>
-
             <Separator orientation="vertical" />
-
             <div className='flex items-center gap-3 h-6'>
-
               {/* font size */}
               {/* add default value is large */}
               <select className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-size focus:outline-none'>
@@ -800,8 +926,12 @@ export default function Editor() {
               transformOrigin: 'top left',
             }}
           >
+
             <div
               id='page-0'
+              // add padding size based on padding size state
+              // add cn to get padding size 
+              // className={cn('bg-white drop-shadow-lg min-h-full overflow-x-hidden overflow-y-auto', getPaddingSize(paddingSize))}
               className='bg-white drop-shadow-lg min-h-full overflow-x-hidden overflow-y-auto'
               style={{
                 width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
@@ -816,6 +946,7 @@ export default function Editor() {
     </div>
   );
 }
+
 
 // handleOverflowContentToNextPage()
 // handleDeleteContentToPreviousPage()

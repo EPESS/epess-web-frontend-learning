@@ -36,6 +36,7 @@ import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
 import ReactLoading from 'react-loading';
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 import { useStore } from '@/hooks/use-store';
+import { cn } from '@/lib/utils';
 
 declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
@@ -123,13 +124,13 @@ function MeetingClientImplCpn(props: {
   }
 
   return (
-      <main data-lk-theme='default' style={{ height: '100%' }}>
-        <VideoConferenceComponent
-          connectionDetails={connectionDetails}
-          userChoices={preJoinChoices}
-          options={{ codec: props.codec, hq: props.hq }}
-        />
-      </main>
+    <main data-lk-theme='default' style={{ height: '100%' }}>
+      <VideoConferenceComponent
+        connectionDetails={connectionDetails}
+        userChoices={preJoinChoices}
+        options={{ codec: props.codec, hq: props.hq }}
+      />
+    </main>
   );
 }
 
@@ -189,8 +190,7 @@ function VideoConferenceComponent(props: {
           (device) => device.kind === 'videoinput'
         );
         toast.error(
-          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
-            hasCamera ? '' : 'camera'
+          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${hasCamera ? '' : 'camera'
           } không tồn tại`,
           {
             theme: 'colored',
@@ -202,11 +202,6 @@ function VideoConferenceComponent(props: {
     }
     console.error(e);
   }, []);
-
-  const isMeetingAndChatOpen = useStore(
-    useToggleMeetingAndChat,
-    (state) => state.isMeetingAndChatOpen
-  );
 
   return (
     <>
@@ -222,18 +217,10 @@ function VideoConferenceComponent(props: {
         onError={handleError}
         className='flex flex-col justify-center items-center bg-white shadow-lg rounded-lg w-full h-full'
       >
-        {isMeetingAndChatOpen && (
-          <VideoConference SettingsComponent={SettingsMenu} />
-        )}
+        <VideoConference SettingsComponent={SettingsMenu} />
 
         <RecordingIndicator />
         {/* display control bar when chat is not open */}
-        {!isMeetingAndChatOpen && (
-          <ControlBar
-            className='flex flex-col gap-5 m-0 p-0 !border-none'
-            vertical={true}
-          />
-        )}
       </LiveKitRoom>
     </>
   );
@@ -317,11 +304,22 @@ const VideoConference = ({
     tracks,
   ]);
 
+  const isMeetingAndChatOpen = useStore(
+    useToggleMeetingAndChat,
+    (state) => state.isMeetingAndChatOpen
+  );
+
   return (
-    <div className='bg-white rounded-lg !w-full lk-video-conference' {...props}>
+    <div className='justify-center items-center bg-white rounded-lg !w-full lk-video-conference' {...props}>
       {isWeb() && (
         <LayoutContextProvider value={layoutContext}>
-          <div className='flex flex-row bg-white lk-video-conference-inner'>
+          {!isMeetingAndChatOpen && (
+            <ControlBar
+              className='flex flex-col gap-5 m-0 p-0 !border-none'
+              vertical={true}
+            />
+          )}
+          <div className={cn('flex flex-row bg-white lk-video-conference-inner', !isMeetingAndChatOpen && 'hidden')}>
             <div className='bg-gray-50 drop-shadow-sm rounded-lg w-full'>
               {!focusTrack ? (
                 <div className='lk-grid-layout-wrapper'>
