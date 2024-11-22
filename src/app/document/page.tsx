@@ -4,7 +4,7 @@ import React from 'react';
 import { Plus } from 'lucide-react'
 
 import { Input } from '@/components/ui/input';
-import Card from './component/card';
+import Card from './component/Card';
 import CardTemplate from './component/CardTemplate';
 
 
