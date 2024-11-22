@@ -164,7 +164,7 @@ export function ControlBar({
         )}
         <StartMediaButton className='!bg-zinc-800' />
       </div>
-      <style>{is430pxStyle}</style>
+      <style>{style}</style>
     </>
   ) : (
     <>
@@ -214,14 +214,14 @@ export function ControlBar({
             <LeaveIcon />
           </DisconnectButton>
         )}
-        <StartMediaButton className='!bg-zinc-800' />
+        <StartMediaButton className='!bg-zinc-800' label='Media' />
       </div>
-      <style>{is430pxStyle}</style>
+      <style>{style}</style>
     </>
   );
 }
 
-const is430pxStyle = `
+const style = `
 .lk-device-menu {
   background-color: #27272a;
   font-size: 12px;

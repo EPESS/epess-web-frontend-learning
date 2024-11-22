@@ -190,7 +190,8 @@ function VideoConferenceComponent(props: {
           (device) => device.kind === 'videoinput'
         );
         toast.error(
-          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${hasCamera ? '' : 'camera'
+          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
+            hasCamera ? '' : 'camera'
           } không tồn tại`,
           {
             theme: 'colored',
@@ -202,6 +203,11 @@ function VideoConferenceComponent(props: {
     }
     console.error(e);
   }, []);
+
+  const isMeetingAndChatOpen = useStore(
+    useToggleMeetingAndChat,
+    (state) => state.isMeetingAndChatOpen
+  );
 
   return (
     <>
@@ -217,10 +223,19 @@ function VideoConferenceComponent(props: {
         onError={handleError}
         className='flex flex-col justify-center items-center bg-white shadow-lg rounded-lg w-full h-full'
       >
-        <VideoConference SettingsComponent={SettingsMenu} />
+        <VideoConference
+          SettingsComponent={SettingsMenu}
+          className={cn(!isMeetingAndChatOpen && '!hidden')}
+        />
 
         <RecordingIndicator />
-        {/* display control bar when chat is not open */}
+
+        {!isMeetingAndChatOpen && (
+          <ControlBar
+            className='flex flex-col gap-5 m-0 p-0 !border-none'
+            vertical={true}
+          />
+        )}
       </LiveKitRoom>
     </>
   );
@@ -232,10 +247,11 @@ export type WidgetState = {
 
 const VideoConference = ({
   SettingsComponent,
+  className,
   ...props
 }: {
   SettingsComponent: React.FC | undefined;
-}) => {
+} & React.HTMLAttributes<HTMLDivElement>) => {
   const lastAutoFocusedScreenShareTrack =
     React.useRef<TrackReferenceOrPlaceholder | null>(null);
 
@@ -304,22 +320,19 @@ const VideoConference = ({
     tracks,
   ]);
 
-  const isMeetingAndChatOpen = useStore(
-    useToggleMeetingAndChat,
-    (state) => state.isMeetingAndChatOpen
-  );
-
   return (
-    <div className='justify-center items-center bg-white rounded-lg !w-full lk-video-conference' {...props}>
+    <div
+      className={cn(
+        'bg-white rounded-lg !w-full lk-video-conference',
+        className
+      )}
+      {...props}
+    >
       {isWeb() && (
         <LayoutContextProvider value={layoutContext}>
-          {!isMeetingAndChatOpen && (
-            <ControlBar
-              className='flex flex-col gap-5 m-0 p-0 !border-none'
-              vertical={true}
-            />
-          )}
-          <div className={cn('flex flex-row bg-white lk-video-conference-inner', !isMeetingAndChatOpen && 'hidden')}>
+          <div
+            className={cn('flex flex-row bg-white lk-video-conference-inner')}
+          >
             <div className='bg-gray-50 drop-shadow-sm rounded-lg w-full'>
               {!focusTrack ? (
                 <div className='lk-grid-layout-wrapper'>

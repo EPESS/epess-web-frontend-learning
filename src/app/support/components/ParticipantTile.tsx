@@ -174,6 +174,7 @@ export const ParticipantTile: (
                     className='w-[100%] h-[100%] select-none aspect-square'
                   >
                     <AvatarImage
+                      className='object-cover'
                       src={
                         trackReference.participant.metadata
                           ? JSON.parse(trackReference.participant.metadata)
