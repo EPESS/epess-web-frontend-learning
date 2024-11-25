@@ -1,60 +1,100 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState } from 'react';
-import { generateRoomId } from '@/lib/client-utils';
-import styles from '@/styles/Home.module.css';
-import Header from '@/components/customs/header';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
-import dynamic from 'next/dynamic';
-
-const Editor = dynamic(() => import('../app/support/components/Editor'), {
-  ssr: false
-})
-
-function MeetingTab() {
-  const router = useRouter();
-  const startMeeting = () => {
-    const roomId = generateRoomId();
-    router.push(`/rooms/${roomId}`);
-  };
-  return (
-    <>
-      <Header />
-      <div className={styles.tabContent}>
-        <p style={{ margin: 0 }}>Essay Platform for Essay Support Services</p>
-        <button
-          style={{ marginTop: '1rem' }}
-          className='lk-button'
-          onClick={startMeeting}
-        >
-          Bắt đầu cuộc họp
-        </button>
-      </div>
-    </>
-  );
-}
+import { useJoinRoom } from './api/support-room';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import ScaleLoader from 'react-spinners/ScaleLoader';
+import { toast } from 'react-toastify';
+import { LEARNING_URL } from '@/lib/utils';
 
 export default function Page() {
   const { userLoading } = useMe();
 
-  const [range, setRange] = useState();
-  const [lastChange, setLastChange] = useState();
-  const [readOnly, setReadOnly] = useState(false);
+  const params = useSearchParams()
+
+  const scheduleDateIdParam = params.get("scheduleDateId") ?? ''
+
+  const [scheduleDateId, setScheduleDateId] = useState(scheduleDateIdParam)
+  const [scheduleDateIdErr, setScheduleDateIdErr] = useState("")
+
+  const router = useRouter()
+
+  const [joinRoom, { loading }] = useJoinRoom()
 
   if (userLoading) {
     return <Loading />;
   }
+
+  const mappingJoinRoomErrorLabel = (error: string) => {
+    switch (error) {
+      case "User not allowed":
+        return "Vui lòng liên hệ giảng viên để bắt đầu buổi học"
+      case "No ScheduleDate found":
+        return "Không có lớp học này vui lòng liên hệ lại giảng viên"
+      case "Collaboration session not allowed in this time":
+        return "Chưa tới giờ hoặc đã kết thúc buổi học. Vui lòng liên hệ giảng viên để biết thêm chi tiết"
+
+      default:
+        "Lỗi"
+        break;
+    }
+  }
+
+  const handleJoinRoom = () => {
+    if (!scheduleDateId) {
+      setScheduleDateIdErr("Vui lòng nhập mã phòng")
+      return;
+    }
+
+    joinRoom({
+      variables: { scheduleDateId },
+      onCompleted: (data) => {
+        if (data) {
+          const collaborationSessionId = data.collaborationSession.id
+          if (collaborationSessionId) {
+            console.log(123);
+            router.push(`${LEARNING_URL}/support?scheduleDateId=${scheduleDateId}`)
+            toast.success("Vào phòng thành công")
+            setScheduleDateIdErr("")
+          }
+        }
+      },
+      onError: (error) => {
+        toast.warning(mappingJoinRoomErrorLabel(error.message))
+      },
+    })
+  }
+
   return (
-    <>
-      {/* <main className={styles.main} data-lk-theme='default'>
-        <div className='header'>
-          <img src='/main_icon.png' alt='EPESS' width={200} className='!mb-5' />
+    <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+      <div className='flex flex-col gap-5 items-center min-w-[400px] justify-center bg-gray-200 w-fit p-16 rounded-lg'>
+        <div className='w-[200px] h-[200px]'>
+          <img src='/main_icon.png' alt='Logo' />
         </div>
-        <MeetingTab />
-      </main> */}
-      <Editor />
-    </>
+        <div className='flex flex-col items-center justify-center'>
+          <Input className='border border-black' required defaultValue={scheduleDateId} onChange={(e) => setScheduleDateId(e.target.value)} name='supportRoomID' type='text' />
+          {scheduleDateIdErr &&
+            <span className='text-red-500'>
+              {scheduleDateIdErr}
+            </span>
+          }
+          {
+            loading
+              ?
+              <div className='flex gap-1 items-center mt-5'>
+                <span>Vui lòng đợi giây lát</span>
+                <ScaleLoader width={10} height={10} />
+              </div>
+              :
+              <Button disabled={loading} className='mt-5' onClick={handleJoinRoom} type='button'>Vào phòng</Button>
+          }
+
+        </div>
+      </div>
+    </div>
   );
 }

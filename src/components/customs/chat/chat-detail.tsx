@@ -17,13 +17,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 type TChatDetail = {
-    roomId?: string,
+    roomId: string | undefined,
 }
 
-
-// "74189dc6-4371-40ca-aaa7-93efc4c3a6be" bamboo
-
-const ChatDetail = ({ roomId = "74189dc6-4371-40ca-aaa7-93efc4c3a6be" }: TChatDetail) => {
+const ChatDetail = ({ roomId }: TChatDetail) => {
 
     const { isMeetingAndChatOpen } = useToggleMeetingAndChat()
 

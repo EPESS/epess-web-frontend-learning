@@ -50,6 +50,8 @@ import { Client } from 'graphql-ws';
 import Ruler from './Ruler';
 import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { DropdownMenuCheckboxes } from '@/components/ui/dropdownMenuCheckboxes';
+import { useCreateDocument } from '@/app/api/document';
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -515,16 +517,6 @@ export default function Editor() {
   (async () => {
     deltaQueue.emit();
   })();
-  // const [size, setSize] = useState('normal');
-
-
-  // useEffect(() => {
-
-  //   const newDiv = document.createElement('div');
-  //   newDiv.className = `ql-size ${size}`;
-  //   // append new div to body
-  //   document.body.appendChild(newDiv);
-  // }, [size]);
 
   useEffect(() => {
     // initialize page config
@@ -556,21 +548,37 @@ export default function Editor() {
     return () => observer.disconnect();
   }, [clientHTTP, clientWS, pageManager, deltaQueue]);
 
+  const [createDocument, { loading: loadingNewFile }] = useCreateDocument()
 
-  // const handleZoomChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-  //   setZoomLevel(parseFloat(event.target.value));
-  // };
+  const handleNewFile = () => {
+    if (loadingNewFile) return;
+    createDocument()
+  }
 
-  // handle delete character, if last character of last page, delete page
-  // const handleDeleteCharacter = () => {
-  //   if (pageManager) {
-  //     const lastPage = pageManager.getLastPage();
-  //     const lastPageContent = lastPage.getText();
-  //     if (lastPageContent.length === 1) {
-  //       pageManager.deletePage(pageManager.pages.length - 1);
-  //     }
-  //   }
-  // };ds
+  const handleFileEvent = (value: string) => {
+    switch (value) {
+      case "new": {
+        handleNewFile()
+        break;
+      }
+      case "open": {
+
+        break;
+      }
+      case "save": {
+
+        break;
+      }
+      case "export": {
+
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
   return (
     <div className='flex w-full h-full'>
       {/* editor */}
@@ -592,32 +600,19 @@ export default function Editor() {
               </div>
               {/* Menu bar */}
               <div className='flex items-center gap-3 h-6'>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                <DropdownMenuCheckboxes
+                  buttonLabel={
                     <Button variant='ghost' className='px-0 h-6'>
                       File
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <FileIcon className="mr-2 w-4 h-4" />
-                      New
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <FolderOpenIcon className="mr-2 w-4 h-4" />
-                      Open
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <SaveIcon className="mr-2 w-4 h-4" />
-                      Save
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <DownloadIcon className="mr-2 w-4 h-4" />
-                      Export
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </Button>}
+                  handleOnChange={(value) => handleFileEvent(value as string)}
+                  options={[
+                    { label: "New", value: "new" },
+                    { label: "Open", value: "open" },
+                    { label: "Save", value: "save" },
+                    { label: "Export", value: "export" }
+                  ]}
+                />
                 <Button variant='ghost' className='px-0 h-6'>
                   Edit
                 </Button>
@@ -634,42 +629,9 @@ export default function Editor() {
             </div>
           </div>
           <div>
-            {/* test apply delta */}
-            {/* <Button
-              variant='ghost'
-              className='px-0 h-6'
-              onClick={() => {
-                if (pageManager) {
-                  pageManager.applyDelta(
-                    new Delta([
-                      // retain current cursor
-                      { retain: pageManager.getCurrentCursor() },
-                      { insert: 'Hello, world!' },
-                    ]),
-                    pageManager.currentPageIndex,
-                    Quill.sources.USER
-                  );
-                }
-              }}
-            >
-              Apply Delta
-            </Button> */}
+
           </div>
-          {/* <div>
-      
-            <select
-              onChange={handleZoomChange}
-              value={zoomLevel.toString()}
-              className='bg-white'
-            >
-              <option value='0.5'>50%</option>
-              <option value='0.75'>75%</option>
-              <option value='1'>100%</option>
-              <option value='1.25'>125%</option>
-              <option value='1.5'>150%</option>
-              <option value='2'>200%</option>
-            </select>
-          </div> */}
+
           {/*quilljs toolbar */}
           <div id='toolbar' className='flex justify-center items-center gap-3 bg-gray-100 shadow-2xl mt-1 mb-1 p-1 rounded-3xl w-full'>
             {/* caption control eg normal, h1, h2, h3, h4, h5, h6  */}
@@ -700,7 +662,7 @@ export default function Editor() {
             <Separator orientation="vertical" />
             <div>
               {/* use select to change header */}
-              <select 
+              <select
                 className='border-input bg-white px-2 border rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[100px] h-6 text-sm ql-header focus:outline-none'
                 value={headerValue}
                 onChange={handleSelectHeader}
@@ -713,72 +675,7 @@ export default function Editor() {
                 <option value="h5">Heading 5</option>
                 <option value="h6">Heading 6</option>
               </select>
-              {/* <div className="relative">
-                <Button 
-                  variant='ghost' 
-                  className='px-0 h-6'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowHeaders(!showHeaders);
-                  }}
-                >
-                  {selectedHeader || "Header"}
-                </Button>
-                {showHeaders && (
-                  <div 
-                    className="z-50 absolute flex flex-col bg-white shadow-lg border rounded-md min-w-[120px]"
-                  >
-                    <Button 
-                      variant='ghost' 
-                      className='justify-start px-2 h-6 ql-header' 
-                      value="h1"
-                      onClick={() => setSelectedHeader("Heading 1")}
-                    >
-                      Heading 1
-                    </Button>
-                    <Button 
-                      variant='ghost' 
-                      className='justify-start px-2 h-6 ql-header' 
-                      value="h2"
-                      onClick={() => setSelectedHeader("Heading 2")}
-                    >
-                      Heading 2
-                    </Button>
-                    <Button 
-                      variant='ghost' 
-                      className='justify-start px-2 h-6 ql-header' 
-                      value="h3"
-                      onClick={() => setSelectedHeader("Heading 3")}
-                    >
-                      Heading 3
-                    </Button>
-                    <Button 
-                      variant='ghost' 
-                      className='justify-start px-2 h-6 ql-header' 
-                      value="h4"
-                      onClick={() => setSelectedHeader("Heading 4")}
-                    >
-                      Heading 4
-                    </Button>
-                    <Button 
-                      variant='ghost' 
-                      className='justify-start px-2 h-6 ql-header' 
-                      value="h5"
-                      onClick={() => setSelectedHeader("Heading 5")}
-                    >
-                      Heading 5
-                    </Button>
-                    <Button 
-                      variant='ghost' 
-                      className='justify-start px-2 h-6 ql-header' 
-                      value="h6"
-                      onClick={() => setSelectedHeader("Heading 6")}
-                    >
-                      Heading 6
-                    </Button>
-                  </div>
-                )}
-              </div> */}
+
               {/* Add click outside listener */}
               {showHeaders && (
                 <div
@@ -824,9 +721,6 @@ export default function Editor() {
               </Button>
             </div>
             <Separator orientation="vertical" />
-            {/* align left */}
-            {/* [{ align: '' }, { align: 'center' }, { align: 'right' }, { align: 'justify' }], */}
-            {/* change align here */}
 
             <div>
               <Button variant='ghost' className='px-0 h-6 ql-align' value="">
@@ -947,26 +841,3 @@ export default function Editor() {
   );
 }
 
-
-// handleOverflowContentToNextPage()
-// handleDeleteContentToPreviousPage()
-
-// this.quill.on("editor-change", (eventName, ...args) =>
-//   {
-//     if(this.quill.getSelection())
-//     {
-//       this.currentFormats = this.quill.getFormat();
-//     }
-//   });
-
-// format(format, params)
-// {
-// 	if(this.currentFormats[format] && (!params || this.currentFormats[format] == params))
-// 	{
-// 		this.quill.format(format, false, Quill.sources.USER);
-// 	}
-// 	else
-// 	{
-// 		this.quill.format(format, params, Quill.sources.USER)
-// 	}
-// }

@@ -42,11 +42,13 @@ declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
 
 function MeetingClientImplCpn(props: {
+  loading?: boolean
   roomName: string;
   hq: boolean; // high quality
   codec: VideoCodec;
   user: User;
 }) {
+
   const [preJoinChoices, setPreJoinChoices] = useState<
     LocalUserChoices | undefined
   >(undefined);
@@ -104,7 +106,7 @@ function MeetingClientImplCpn(props: {
     }
   }, [preJoinChoices, handlePreJoinSubmit]);
 
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(props.loading);
 
   useEffect(() => {
     setIsLoading(false);

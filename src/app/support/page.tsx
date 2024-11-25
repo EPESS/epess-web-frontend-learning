@@ -5,13 +5,15 @@ import { isVideoCodec } from '@/lib/types';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
 import { Button } from '@/components/ui/button';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { ChevronLeftIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 import { useStore } from '@/hooks/use-store';
-import { ControlBar } from './components/ControlBar';
 import dynamic from 'next/dynamic';
 import ChatDetail from '@/components/customs/chat/chat-detail';
+import { useSearchParams } from 'next/navigation';
+import { useJoinRoomQuery } from '../api/support-room';
+import { useGetMeetingRoom } from '../api/meeting-room';
 
 const Editor = dynamic(() => import("../support/components/Editor"))
 
@@ -23,12 +25,14 @@ export default function Component({
     codec?: string;
   };
 }) {
+  const params = useSearchParams()
+
+  const scheduleDateIdParam = params.get("scheduleDateId") ?? ''
+
   const isMeetingAndChatOpen = useStore(
     useToggleMeetingAndChat,
     (state) => state.isMeetingAndChatOpen
   );
-
-  const { toggleMeetingAndChat } = useToggleMeetingAndChat();
 
   const codec =
     typeof searchParams.codec === 'string' && isVideoCodec(searchParams.codec)
@@ -36,9 +40,19 @@ export default function Component({
       : 'vp9';
   const hq = searchParams.hq === 'true';
 
+  const { toggleMeetingAndChat } = useToggleMeetingAndChat();
+
   const { user, userLoading } = useMe();
 
-  if (userLoading || !user) {
+  const { loading: roomLoading, data } = useJoinRoomQuery(scheduleDateIdParam)
+
+  const [joinMeetingRoom, { loading: meetingRoomLoading, data: meeting }] = useGetMeetingRoom(scheduleDateIdParam)
+
+  const meetingCollaborationSession = meeting?.meetingRoom
+
+  const collaborationSession = data?.collaborationSession
+
+  if (userLoading || roomLoading || !user) {
     return <Loading />;
   }
 
@@ -79,16 +93,22 @@ export default function Component({
           )} />
         </Button>
 
-        <div className='z-30 flex-grow drop-shadow-sm pt-2 rounded-lg h-1/3'>
-          <MeetingClientImpl
-            roomName={'yh3f-xc67'}
-            hq={hq}
-            codec={codec}
-            user={user}
-          />
+        <div className={cn('z-30 relative flex-grow drop-shadow-sm pt-2 rounded-lg h-1/3 m-1', !meetingCollaborationSession && "border-black border")} >
+          {
+            !meetingCollaborationSession ?
+              <Button onClick={() => joinMeetingRoom()} variant={"outline"} className='absolute border-black top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>Kết nối</Button>
+              :
+              <MeetingClientImpl
+                loading={meetingRoomLoading}
+                roomName={meetingCollaborationSession.id}
+                hq={hq}
+                codec={codec}
+                user={user}
+              />
+          }
         </div>
         <div className='z-20 flex-grow bg-gray-50 drop-shadow-md rounded-lg w-full h-2/3'>
-          <ChatDetail />
+          <ChatDetail roomId={collaborationSession?.chatRoomId} />
         </div>
       </div>
     </div>
