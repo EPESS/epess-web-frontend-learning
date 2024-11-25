@@ -1,9 +1,14 @@
 import { gql, useLazyQuery, useQuery } from "@apollo/client";
 
-// Type for the nested ChatRoom object
-type TChatRoom = {
-    id: string;
-};
+type TActiveDocument = {
+    createdAt: Date
+    fileUrl: string
+    id: string
+    isPublic: boolean
+    name: string
+    ownerId: string
+    updatedAt: Date
+}
 
 // Type for the CollaborationSession
 export type TCollaborationSession = {
@@ -12,7 +17,7 @@ export type TCollaborationSession = {
     createdAt: string;
     id: string;
     updatedAt: string;
-    chatRoom: TChatRoom;
+    activeDocument: TActiveDocument;
 };
 
 // Type for the response from the query
@@ -38,13 +43,18 @@ query CollaborationSession ($scheduleDateId: String!) {
         createdAt
         id
         updatedAt
-        chatRoom {
+        activeDocument {
+            createdAt
+            fileUrl
             id
+            isPublic
+            name
+            ownerId
+            updatedAt
         }
     }
 }
 `
-
 export const useJoinRoom = () => {
     return useLazyQuery<TCollaborationSessionResponse>(JOINROOM)
 }

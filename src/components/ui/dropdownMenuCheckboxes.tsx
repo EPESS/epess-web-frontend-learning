@@ -27,7 +27,7 @@ type TDropdown = {
     checked?: boolean
 }
 
-export const DropdownMenuCheckboxes = ({ label, options, handleOnChange, buttonLabel, defaultValue, multiple }: TDropdownMenuCheckboxes) => {
+export const DropdownMenuCheckboxes = ({ options, handleOnChange, buttonLabel, defaultValue, multiple }: TDropdownMenuCheckboxes) => {
     const [value, setValue] = useState<string | number | null>(defaultValue ?? null)
     const [values, setValues] = useState<(string | number | null)[] | null>([])
     const [open, setOpen] = useState(false)
@@ -70,7 +70,6 @@ export const DropdownMenuCheckboxes = ({ label, options, handleOnChange, buttonL
                     }
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="bottom" className="w-56">
-                    <DropdownMenuLabel>{label}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {options?.map((item, index) => (
                         <DropdownMenuCheckboxItem

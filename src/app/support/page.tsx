@@ -6,14 +6,15 @@ import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
 import { Button } from '@/components/ui/button';
 import { ChevronLeftIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, LEARNING_URL } from '@/lib/utils';
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 import { useStore } from '@/hooks/use-store';
 import dynamic from 'next/dynamic';
 import ChatDetail from '@/components/customs/chat/chat-detail';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useJoinRoomQuery } from '../api/support-room';
 import { useGetMeetingRoom } from '../api/meeting-room';
+import { toast } from 'react-toastify';
 
 const Editor = dynamic(() => import("../support/components/Editor"))
 
@@ -26,6 +27,8 @@ export default function Component({
   };
 }) {
   const params = useSearchParams()
+
+  const router = useRouter()
 
   const scheduleDateIdParam = params.get("scheduleDateId") ?? ''
 
@@ -44,13 +47,20 @@ export default function Component({
 
   const { user, userLoading } = useMe();
 
-  const { loading: roomLoading, data } = useJoinRoomQuery(scheduleDateIdParam)
+  const { loading: roomLoading, data, refetch } = useJoinRoomQuery(scheduleDateIdParam)
 
   const [joinMeetingRoom, { loading: meetingRoomLoading, data: meeting }] = useGetMeetingRoom(scheduleDateIdParam)
 
   const meetingCollaborationSession = meeting?.meetingRoom
 
   const collaborationSession = data?.collaborationSession
+
+  React.useEffect(() => {
+    if (!data) {
+      router.push(LEARNING_URL)
+      toast.warning("Không có lớp học này vui lòng liên hệ lại giảng viên !")
+    }
+  }, [scheduleDateIdParam])
 
   if (userLoading || roomLoading || !user) {
     return <Loading />;
@@ -68,7 +78,7 @@ export default function Component({
             : 'calc(24 / 25 * 100%)',
         }}
       >
-        <Editor />
+        <Editor handleRefetch={refetch} data={data} loading={roomLoading} collaborationId={collaborationSession?.id ?? ''} />
       </div>
 
       {/* Slice 2 with dynamic width */}
