@@ -20,6 +20,15 @@ export type TCollaborationSessionResponse = {
     collaborationSession: TCollaborationSession;
 };
 
+export enum EJoinRoomErrorCode {
+    MentorSessionNotCreated = "Mentor does not created collaboration session yet",
+    UserNotAllowed = "User not allowed",
+    OrderNotFound = "Order not found",
+    OrderChatRoomNotFound = "Order chat room not found",
+    ScheduleDateNotFound = "Schedule date not found",
+    ChatRoomNotFound = "Chat room not found",
+    CollaborationNotTime = "Collaboration session not allowed in this time"
+}
 
 const JOINROOM = gql`
 query CollaborationSession ($scheduleDateId: String!) {

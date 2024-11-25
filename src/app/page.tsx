@@ -4,12 +4,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState } from 'react';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
-import { useJoinRoom } from './api/support-room';
+import { EJoinRoomErrorCode, useJoinRoom } from './api/support-room';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ScaleLoader from 'react-spinners/ScaleLoader';
 import { toast } from 'react-toastify';
 import { LEARNING_URL } from '@/lib/utils';
+import Header from '@/components/customs/header';
 
 export default function Page() {
   const { userLoading } = useMe();
@@ -31,15 +32,17 @@ export default function Page() {
 
   const mappingJoinRoomErrorLabel = (error: string) => {
     switch (error) {
-      case "User not allowed":
+      case EJoinRoomErrorCode.MentorSessionNotCreated:
         return "Vui lòng liên hệ giảng viên để bắt đầu buổi học"
-      case "No ScheduleDate found":
+      case EJoinRoomErrorCode.ScheduleDateNotFound:
         return "Không có lớp học này vui lòng liên hệ lại giảng viên"
-      case "Collaboration session not allowed in this time":
+      case EJoinRoomErrorCode.UserNotAllowed:
+        return "Bạn không thể gia nhập lớp học này"
+      case EJoinRoomErrorCode.CollaborationNotTime:
         return "Chưa tới giờ hoặc đã kết thúc buổi học. Vui lòng liên hệ giảng viên để biết thêm chi tiết"
 
       default:
-        "Lỗi"
+        "Hệ thống lỗi"
         break;
     }
   }
@@ -70,31 +73,35 @@ export default function Page() {
   }
 
   return (
-    <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-      <div className='flex flex-col gap-5 items-center min-w-[400px] justify-center bg-gray-200 w-fit p-16 rounded-lg'>
-        <div className='w-[200px] h-[200px]'>
-          <img src='/main_icon.png' alt='Logo' />
-        </div>
-        <div className='flex flex-col items-center justify-center'>
-          <Input className='border border-black' required defaultValue={scheduleDateId} onChange={(e) => setScheduleDateId(e.target.value)} name='supportRoomID' type='text' />
-          {scheduleDateIdErr &&
-            <span className='text-red-500'>
-              {scheduleDateIdErr}
-            </span>
-          }
-          {
-            loading
-              ?
-              <div className='flex gap-1 items-center mt-5'>
-                <span>Vui lòng đợi giây lát</span>
-                <ScaleLoader width={10} height={10} />
-              </div>
-              :
-              <Button disabled={loading} className='mt-5' onClick={handleJoinRoom} type='button'>Vào phòng</Button>
-          }
 
+    <>
+      <Header />
+      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+        <div className='flex flex-col gap-5 items-center min-w-[400px] justify-center bg-gray-200 w-fit p-16 rounded-lg'>
+          <div className='w-[200px] h-[200px]'>
+            <img src='/main_icon.png' alt='Logo' />
+          </div>
+          <div className='flex flex-col items-center justify-center'>
+            <Input className='border border-black' required defaultValue={scheduleDateId} onChange={(e) => setScheduleDateId(e.target.value)} name='supportRoomID' type='text' />
+            {scheduleDateIdErr &&
+              <span className='text-red-500'>
+                {scheduleDateIdErr}
+              </span>
+            }
+            {
+              loading
+                ?
+                <div className='flex gap-1 items-center mt-5'>
+                  <span>Vui lòng đợi giây lát</span>
+                  <ScaleLoader width={10} height={10} />
+                </div>
+                :
+                <Button disabled={loading} className='mt-5' onClick={handleJoinRoom} type='button'>Vào phòng</Button>
+            }
+
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
