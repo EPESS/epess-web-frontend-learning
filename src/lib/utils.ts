@@ -8,6 +8,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const getVNTime = (rawDate: Date) => {
+  const date = new Date(rawDate)
+
+  return date.toLocaleString("vi-VN")
+}
+
 export function isProp<
   U extends HTMLElement,
   T extends React.HTMLAttributes<U>,

@@ -56,11 +56,11 @@ export default function Component({
   const collaborationSession = data?.collaborationSession
 
   React.useEffect(() => {
-    if (!data) {
+    if (!data && !roomLoading) {
       router.push(LEARNING_URL)
       toast.warning("Không có lớp học này vui lòng liên hệ lại giảng viên !")
     }
-  }, [scheduleDateIdParam])
+  }, [roomLoading])
 
   if (userLoading || roomLoading || !user) {
     return <Loading />;
