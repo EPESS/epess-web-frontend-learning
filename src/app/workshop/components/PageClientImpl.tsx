@@ -48,6 +48,7 @@ export function PageClientImpl(props: {
   codec: VideoCodec;
 }) {
   const { user, userLoading } = useMe();
+  const [roomId, setRoomId] = useState<string | undefined>(props.roomIdData);
 
   const [preJoinChoices, setPreJoinChoices] = React.useState<
     LocalUserChoices | undefined
@@ -63,16 +64,15 @@ export function PageClientImpl(props: {
 
   const handlePreJoinSubmit = React.useCallback(
     async (values: LocalUserChoices) => {
-      console.log(values);
       setPreJoinChoices(values);
       const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
-      url.searchParams.append('roomName', props.roomIdData);
+      url.searchParams.append('roomName', roomId ?? '');
       url.searchParams.append('participantName', values.username);
       const connectionDetailsResp = await fetch(url.toString());
       const connectionDetailsData = await connectionDetailsResp.json();
       setConnectionDetails(connectionDetailsData);
     },
-    [props.roomIdData]
+    [roomId]
   );
   const handlePreJoinError = React.useCallback((e: Error) => {
     console.error(e);
@@ -147,7 +147,8 @@ export function PageClientImpl(props: {
                   onSubmit={handlePreJoinSubmit}
                   onError={handlePreJoinError}
                   persistUserChoices={false}
-                  roomIdData={props.roomIdData}
+                  roomIdData={roomId}
+                  setRoomIdData={setRoomId}
                 />
               </div>
             </div>

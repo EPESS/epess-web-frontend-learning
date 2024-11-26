@@ -44,6 +44,7 @@ export interface PreJoinProps
   defaults?: Partial<LocalUserChoices>;
   /** Display a debug window for your convenience. */
   roomIdData?: string;
+  setRoomIdData?: (roomId: string) => void;
   debug?: boolean;
   joinLabel?: string;
   micLabel?: string;
@@ -235,6 +236,7 @@ export function usePreviewDevice<T extends LocalVideoTrack | LocalAudioTrack>(
  */
 export function PreJoin({
   roomIdData,
+  setRoomIdData,
   defaults = {},
   onValidate,
   onSubmit,
@@ -249,7 +251,6 @@ export function PreJoin({
   ...htmlProps
 }: PreJoinProps) {
   const [userChoices, setUserChoices] = React.useState(defaultUserChoices);
-  const [roomId, setRoomId] = React.useState(roomIdData);
 
   // TODO: Remove and pipe `defaults` object directly into `usePersistentUserChoices` once we fully switch from type `LocalUserChoices` to `UserChoices`.
   const partialDefaults: Partial<LocalUserChoices> = {
@@ -503,9 +504,9 @@ export function PreJoin({
             id='roomData'
             name='roomData'
             type='text'
-            defaultValue={roomId}
+            defaultValue={roomIdData}
             placeholder='Nhập ID phòng'
-            onChange={(inputEl) => setRoomId(inputEl.target.value)}
+            onChange={(inputEl) => setRoomIdData?.(inputEl.target.value)}
             autoComplete='off'
           />
         </div>
@@ -513,7 +514,7 @@ export function PreJoin({
           className='lk-button lk-join-button'
           type='submit'
           onClick={handleSubmit}
-          disabled={!isValid || !roomId}
+          disabled={!isValid || !roomIdData}
         >
           {joinLabel}
         </button>
