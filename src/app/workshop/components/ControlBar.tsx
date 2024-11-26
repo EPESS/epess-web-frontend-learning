@@ -236,10 +236,10 @@ export function ControlBar({
               <EllipsisVertical className='block xs:hidden' />
             </Button>
           </PopoverTrigger>
-          <PopoverContent>
+          <PopoverContent className='bg-neutral-950 !border-zinc-950'>
             <div {...htmlProps} className='flex flex-col gap-5'>
               {visibleControls.microphone && (
-                <div className='lk-button-group bg-zinc-800 flex items-center justify-center relative'>
+                <div className='lk-button-group bg-zinc-800 text-white flex items-center justify-center relative'>
                   <TrackToggle
                     source={Track.Source.Microphone}
                     showIcon={true}
@@ -253,7 +253,7 @@ export function ControlBar({
                   >
                     Microphone
                   </TrackToggle>
-                  <div className='lk-button-group-menu bg-zinc-900 absolute top-0 right-0 bottom-0'>
+                  <div className='lk-button-group-menu bg-zinc-900 text-white absolute top-0 right-0 bottom-0'>
                     <MediaDeviceMenu
                       kind='audioinput'
                       onActiveDeviceChange={(_kind, deviceId) =>
@@ -264,7 +264,7 @@ export function ControlBar({
                 </div>
               )}
               {visibleControls.camera && (
-                <div className='lk-button-group bg-zinc-800 flex items-center justify-center relative'>
+                <div className='lk-button-group bg-zinc-800 text-white flex items-center justify-center relative'>
                   <TrackToggle
                     source={Track.Source.Camera}
                     showIcon={true}
@@ -275,7 +275,7 @@ export function ControlBar({
                   >
                     Camera
                   </TrackToggle>
-                  <div className='lk-button-group-menu bg-zinc-900 absolute top-0 right-0 bottom-0'>
+                  <div className='lk-button-group-menu bg-zinc-900 text-white absolute top-0 right-0 bottom-0'>
                     <MediaDeviceMenu
                       kind='videoinput'
                       onActiveDeviceChange={(_kind, deviceId) =>
@@ -300,19 +300,19 @@ export function ControlBar({
                       error,
                     })
                   }
-                  className='!bg-zinc-800'
+                  className='!bg-zinc-800 text-white'
                 >
                   {isScreenShareEnabled ? 'Dừng chia sẻ' : 'Màn hình'}
                 </TrackToggle>
               )}
               {visibleControls.chat && (
-                <ChatToggle className='!bg-zinc-800'>
+                <ChatToggle className='!bg-zinc-800 text-white'>
                   <ChatIcon />
                   Tin nhắn
                 </ChatToggle>
               )}
               {visibleControls.settings && (
-                <SettingsMenuToggle className='!bg-zinc-800'>
+                <SettingsMenuToggle className='!bg-zinc-800 text-white'>
                   <GearIcon />
                   Cài đặt
                 </SettingsMenuToggle>
@@ -323,7 +323,7 @@ export function ControlBar({
                   Rời cuộc họp
                 </DisconnectButton>
               )}
-              <StartMediaButton className='!bg-zinc-800' />
+              <StartMediaButton className='!bg-zinc-800 text-white' />
             </div>
             <style>{is430pxStyle}</style>
           </PopoverContent>
