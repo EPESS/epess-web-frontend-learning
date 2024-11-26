@@ -1,8 +1,8 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-export const LEARNING_URL = "https://learning.epess.org"
-// export const LEARNING_URL = "http://localhost:3000"
+// export const LEARNING_URL = "https://learning.epess.org"
+export const LEARNING_URL = "http://localhost:3000"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

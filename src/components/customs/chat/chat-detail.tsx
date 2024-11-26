@@ -12,9 +12,10 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import ToolTipCustom from '../tool-tip'
 import { useAuth, useUser } from '@clerk/nextjs'
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
-import { MessageCircle } from 'lucide-react'
+import { ArrowDownCircle, MessageCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import CopyButton from '@/components/ui/copy-button'
 
 type TChatDetail = {
     roomId: string | undefined,
@@ -34,6 +35,8 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
     const [sendMessage, { loading }] = useSendMessage()
 
     const [skip, setSkip] = useState(0)
+    const [newMessage, setNewMessage] = useState<React.ReactNode | undefined>(undefined)
+    const [isMe, setIsMe] = useState<React.ReactNode | undefined>(undefined)
 
     const { data: msg, loading: msgLoading, fetchMore } = useGetChatRoomDetail({
         chatRoomId: roomId ?? '',
@@ -49,22 +52,6 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
 
     const [showTooltip, setShowTooltip] = useState(false);
 
-    useEffect(() => {
-        if (isMeetingAndChatOpen) {
-            setIncomingMessages(0);
-        } else if (!isMeetingAndChatOpen && listMsg.length > 0) {
-            setIncomingMessages(prev => prev + 1);
-        }
-    }, [isMeetingAndChatOpen, listMsg]);
-
-    useEffect(() => {
-        if (incomingMessages > 0) {
-            setShowTooltip(true);
-            const timer = setTimeout(() => setShowTooltip(false), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [incomingMessages]);
-
     const handleSendMessage = ({ msg, type = MessageType.TEXT }: { msg: string | undefined, type?: MessageType }) => {
         if (!msg) return;
         sendMessage({
@@ -74,10 +61,13 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
                 type
             }
         })
+        scrollToBottom()
     }
 
     const subscribeMessages = async () => {
-        for await (const result of clientWS(sessionId!).iterate<{ messageSent: Message }>({
+        if (!sessionId) return;
+
+        for await (const result of clientWS(sessionId).iterate<{ messageSent: Message }>({
             query: `subscription MessageSent {
     messageSent(chatRoomId: "${roomId}") {
         chatRoomId
@@ -102,8 +92,11 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
         })) {
             if (result?.data?.messageSent) {
                 const message = result.data.messageSent;
-                setIsUserScroll(false)
-                scrollToBottom()
+
+                if (user?.id !== message.sender.id) {
+                    setNewMessage(<div className='rounded-md py-2 px-4 bg-amber-200'><span>Bạn có tin nhắn mới</span></div>)
+                }
+
                 setListMsg(prev => {
                     const msg = prev.find(item => item.id === message.id);
                     if (!msg) {
@@ -115,13 +108,24 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
         }
     }
 
+    const handleScrollNewMessage = () => {
+        scrollToBottom()
+        setIsUserScroll(false)
+    }
+
     const handleScroll = async () => {
 
         if (scrollRef.current) {
-            const { scrollTop } = scrollRef.current;
+            const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
 
-            if (scrollRef.current.scrollTop === scrollRef.current.scrollHeight) {
+            if (scrollHeight - scrollTop - clientHeight < 1) {
+                setNewMessage(undefined)
+                setIsMe(undefined)
                 setIsUserScroll(false)
+            }
+
+            if (scrollHeight - scrollTop - clientHeight > 50) {
+                setIsMe(<ArrowDownCircle className='w-6 h-6' />)
             }
 
             if (scrollTop === 0) {
@@ -133,6 +137,7 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
                                 skip: prev + 20,
                             }
                         })
+
                         if (data.data.messages.length === 0) {
                             scrollRef.current?.removeEventListener('scroll', handleScroll);
                         }
@@ -141,6 +146,7 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
                 }
                 )
             }
+
         }
     };
 
@@ -181,9 +187,38 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
         }
     }, [])
 
+
+
+
+
+
+    useEffect(() => {
+        if (isMeetingAndChatOpen) {
+            setIncomingMessages(0);
+        } else if (!isMeetingAndChatOpen && listMsg.length > 0) {
+            setIncomingMessages(prev => prev + 1);
+        }
+    }, [isMeetingAndChatOpen, listMsg]);
+
+    useEffect(() => {
+        if (incomingMessages > 0) {
+            setShowTooltip(true);
+            const timer = setTimeout(() => setShowTooltip(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [incomingMessages]);
+
     return (
         isMeetingAndChatOpen ? (
             <div className='relative px-2 w-full h-full'>
+                {
+                    (newMessage || isMe) &&
+                    <div className='absolute bottom-[70px] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50'>
+                        <div className='cursor-pointer' onClick={handleScrollNewMessage}>
+                            {newMessage ? newMessage : isMe}
+                        </div>
+                    </div>
+                }
                 <div className={cn('flex h-[88%] flex-col justify-end')}>
                     <ScrollArea ref={scrollRef} className='h-[80vh]'>
                         <div>
@@ -192,20 +227,11 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
                                 <div className={cn('flex gap-3 p-4 items-end')} key={msg.id}>
                                     <div className={cn((msg.sender.id === user?.id) && 'order-2')}>
                                         <Avatar>
-                                            <AvatarImage src={msg.sender.avatarUrl} />
+                                            <AvatarImage className='!object-cover' src={msg.sender.avatarUrl} />
                                             <AvatarFallback>CN</AvatarFallback>
                                         </Avatar>
                                     </div>
-                                    <div className={cn("w-full flex flex-col", (msg.sender.id === user?.id) && "text-end items-end")}>
-                                        <p className='font-bold text-[13px]'>{msg.sender.name}</p>
-                                        <div className="w-fit">
-                                            <ToolTipCustom
-                                                content={msg.sentAt.toString()}
-                                                triggerChildren={msg.content}
-                                            />
-                                        </div>
-
-                                    </div>
+                                    <UserMsg msg={msg} user={user} />
                                 </div>
                             ))}
                         </div>
@@ -243,32 +269,55 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
 
 export default ChatDetail
 
-//    {/* <div className='top-0 right-0 left-0 z-50 absolute bg-white border-b-[1px] h-auto'>
-//                 <div className={cn('flex justify-between items-center p-4')}>
-//                     <div className='flex items-end gap-3'>
-//                         <div>
-//                             <Avatar>
-//                                 <AvatarImage src={receiverUser?.mentor?.avatarUrl} />
-//                                 <AvatarFallback>CN</AvatarFallback>
-//                             </Avatar>
-//                         </div>
-//                         <div>
-//                             <p className='font-bold text-[13px]'>{receiverUser?.mentor?.name}</p>
-//                             <p className='flex items-center gap-2 text-[12px]'>
-//                                 <span>
-//                                     Đang hoạt động
-//                                 </span>
-//                                 <span>
-//                                     <span className="relative flex w-3 h-3">
-//                                         <span className="inline-flex absolute bg-[#1ed242] opacity-75 rounded-full w-full h-full animate-ping"></span>
-//                                         <span className="inline-flex relative bg-[#1ed242] rounded-full w-3 h-3"></span>
-//                                     </span>
-//                                 </span>
-//                             </p>
-//                         </div>
-//                     </div>
-//                     <div>
-//                         <Video stroke='#ababab' className='w-8 h-8 cursor-pointer' />
-//                     </div>
-//                 </div>
-//             </div> */}
+const UserMsg = ({
+    msg,
+    user,
+}: {
+    msg: Message;
+    user: ReturnType<typeof useUser>['user'];
+}) => {
+    const [isHover, setIsHover] = useState(false);
+
+    const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        setIsHover(true);
+    };
+
+    const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        setIsHover(false);
+    };
+
+    return (
+        <div
+            className={cn(
+                'w-full flex flex-col',
+                msg.sender.id === user?.id && 'text-end items-end'
+            )}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            <p className='text-[12.5px] font-bold'>{msg.sender.name}</p>
+            <div className='max-w-[25vw] mt-1'>
+                <div className='w-full flex items-center gap-2'>
+                    <div className='relative'>
+                        <ToolTipCustom
+                            content={msg.sentAt.toString()}
+                            triggerChildren={msg.content}
+                        />
+                        {isHover && msg.type === MessageType.TEXT && (
+                            <div
+                                className={cn(
+                                    'absolute top-1/2 -translate-y-1/2',
+                                    msg.sender.id !== user?.id ? '-right-12' : '-left-12'
+                                )}
+                            >
+                                <CopyButton content={msg.content} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
