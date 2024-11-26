@@ -224,7 +224,7 @@ h2 a {
 .cl-signIn-start,
 .cl-signUp-start,
 .cl-footer {
-  background: #18181b;
+  @apply bg-background;
   box-shadow: none;
   padding: 20px;
 }
@@ -232,18 +232,18 @@ h2 a {
 .cl-socialButtonsBlockButton,
 .cl-socialButtonsBlockButton:hover {
   height: 40px;
-  background-color: #27272a;
-  color: #fff;
+  @apply bg-muted;
+  @apply text-foreground;
 }
 
 .cl-headerTitle,
 .cl-footerActionLink {
-  filter: brightness(1000%);
+  @apply text-foreground;
 }
 
 .cl-footerActionText,
 .cl-headerSubtitle {
-  color: #94a3b8;
+  @apply text-muted-foreground;
 }
 
 .cl-logoBox {
@@ -259,15 +259,14 @@ h2 a {
   }
 }
 
-
 @layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
-      display: none;
+    display: none;
   }
- /* Hide scrollbar for IE, Edge and Firefox */
+  /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
-}
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }
