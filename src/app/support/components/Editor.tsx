@@ -47,6 +47,10 @@ import ScaleLoader from 'react-spinners/ScaleLoader';
 import { useUpdateActiveDocumentId } from '@/app/api/document/updateActiveDocument';
 import { toast } from 'react-toastify';
 import { useUpdateDocument } from '@/app/api/document/updateDocument';
+import { TCollaborationSessionUpdated, useGetCollaborationSessionUpdated } from '@/app/api/support-room/collaborationSessionUpdated';
+import { EventDocumentClientRequestSyncResponse, useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDocumentClientRequestSync';
+
+
 
 export const EDITOR_TOOLBAR_BINDINGS = [
   ['bold', 'italic', 'underline', 'strike'],
@@ -80,11 +84,14 @@ type TEditor = {
 }
 
 export default function Editor({ collaborationId, loading, data, handleRefetch }: TEditor) {
+
+  const { data: documentData, loading: documentLoading } = useGetEventDocumentClientRequestSync(data?.collaborationSession.activeDocumentId ?? "", 0)
   const [title, setTitle] = useState(data?.collaborationSession?.activeDocument?.name)
+  const [documentId, setDocumentId] = useState(data?.collaborationSession.activeDocumentId)
   const pageRef = useRef<HTMLDivElement | null>(null);
   const [pageManager, setPageManager] = useState<PageManager | null>(null);
   const [paddingSize, setPaddingSize] = useState('10');
-  const { sessionId } = useAuth();
+  const { userId, sessionId } = useAuth();
   const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
   const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
   const deltaQueue = new DeltaQueue(clientHTTP);
@@ -94,27 +101,28 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
   const [showHeaders, setShowHeaders] = useState(false);
   const [selectedHeader, setSelectedHeader] = useState<string>("Normal");
 
-  const handleSelectHeader = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log(event.target.value);
-    setHeaderValue(event.target.value);
-  }
-  (async () => {
-    deltaQueue.emit();
-  })();
-
-  const [createDocument, { loading: loadingNewFile, data: newData }] = useCreateDocument(collaborationId)
-
-  const documentId = newData?.createDocument.id ? newData?.createDocument.id : data?.collaborationSession.activeDocumentId ? data?.collaborationSession.activeDocumentId : ""
+  const [createDocument, { loading: loadingNewFile }] = useCreateDocument(collaborationId)
 
   const [updateActiveDocument, { loading: loadingUpdateActiveDocument }] = useUpdateActiveDocumentId()
 
-  const [updateDocument, { loading: loadingUpdateDocument, data: dataUpdateDocument }] = useUpdateDocument()
+  const [updateDocument, { loading: loadingUpdateDocument }] = useUpdateDocument()
+
+  const handleSelectHeader = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setHeaderValue(event.target.value);
+  }
+
+
+
+
+  const documentDataRef = useRef(documentData)
+
 
   const handleNewFile = () => {
     if (loadingNewFile) return;
     if (loadingUpdateActiveDocument) return;
     createDocument({
       onCompleted: (data) => {
+        setDocumentId(data.createDocument.id)
         updateActiveDocument({
           variables: {
             activeDocumentId: data.createDocument.id,
@@ -133,9 +141,17 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
     })
   }
 
+  const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
+    console.log("hahahahaha", data.collaborationSessionUpdated);
+  }
+
+  useEffect(() => {
+    documentDataRef.current = documentData
+  }, [documentData])
+
   useEffect(() => {
     setTitle(data?.collaborationSession?.activeDocument?.name)
-  },[data])
+  }, [data])
 
   useEffect(() => {
     setPageManager(null);
@@ -147,17 +163,24 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length) {
           const pageElement = document.getElementById('page-0');
-          console.log('Mutation detected after timeout', pageElement);
 
           if (pageElement && !pageManager) {
-            console.log('Page element found, initializing PageManager');
             const newPageManager = new PageManager(
-              documentId,
+              sessionId ?? "",
+              userId ?? "",
+              documentId ?? "",
               PageManager.newQuill(pageElement),
               clientHTTP,
               clientWS,
               deltaQueue
             );
+
+            if (documentData) {
+              console.log(123);
+
+              newPageManager.setDelta(documentData?.eventDocumentClientRequestSync?.delta, 0, 'silent')
+            }
+
             setPageManager(newPageManager);
             // attach toolbar to page
             newPageManager.attachToolbarToPage(0);
@@ -173,7 +196,11 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
     });
 
     return () => observer.disconnect();
-  }, [pageManager, documentId]);
+  }, [pageManager, documentId, documentData, documentDataRef, documentLoading]);
+
+  useEffect(() => {
+    useGetCollaborationSessionUpdated(sessionId, collaborationId, handleNewFileSubscription)
+  }, [])
 
   const handleFileEvent = (value: string) => {
     switch (value) {
@@ -205,7 +232,7 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
 
     updateDocument({
       variables: {
-        documentId,
+        documentId: documentId ?? "",
         name: title
       },
       onCompleted: () => {
@@ -217,6 +244,9 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
       }
     })
   }
+  (async () => {
+    deltaQueue.emit();
+  })();
 
   return (
     <div className='flex w-full h-full'>
@@ -323,6 +353,10 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
 
             </div>
             <Separator orientation="vertical" />
+            <span className="ql-formats">
+              <select className="ql-color"></select>
+              <select className="ql-background"></select>
+            </span>
             <div className='flex items-center gap-3 h-6'>
               {/* font size */}
               {/* add default value is large */}

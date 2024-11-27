@@ -1,0 +1,57 @@
+import { clientWS } from "@/providers/apolloClient";
+
+type TActiveDocument = {
+    createdAt: string;
+    fileUrl: string;
+    id: string;
+    isPublic: boolean;
+    name: string;
+    ownerId: string;
+    updatedAt: string;
+}
+
+export type TCollaborationSessionUpdated = {
+    collaborationSessionUpdated: {
+        activeDocumentId: string;
+        chatRoomId: string;
+        createdAt: string;
+        id: string;
+        updatedAt: string;
+        activeDocument: TActiveDocument;
+    }
+}
+
+export const useGetCollaborationSessionUpdated = async (sessionId: string | null | undefined, collaborationSessionUpdated: string | undefined, handleChange: (data: TCollaborationSessionUpdated) => void) => {
+    if (collaborationSessionUpdated && sessionId) {
+
+        for await (const result of clientWS(sessionId).iterate<TCollaborationSessionUpdated>({
+            query: `
+            subscription CollaborationSessionUpdated  {
+        collaborationSessionUpdated(
+            collaborationSessionId: "${collaborationSessionUpdated}"
+        ) {
+            activeDocumentId
+            chatRoomId
+            createdAt
+            id
+            updatedAt
+            activeDocument {
+                createdAt
+                fileUrl
+                id
+                isPublic
+                name
+                ownerId
+                updatedAt
+            }
+        }
+    }`,
+        })) {
+            if (result?.data) {
+                handleChange(result?.data);
+            }
+        }
+    }
+
+
+}

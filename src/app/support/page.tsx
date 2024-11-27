@@ -15,6 +15,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useJoinRoomQuery } from '../api/support-room';
 import { useGetMeetingRoom } from '../api/meeting-room';
 import { toast } from 'react-toastify';
+import { useGetCollaborationSessionUpdated } from '../api/support-room/collaborationSessionUpdated';
+import { useAuth } from '@clerk/nextjs';
 
 const Editor = dynamic(() => import("../support/components/Editor"))
 
@@ -29,6 +31,8 @@ export default function Component({
   const params = useSearchParams()
 
   const router = useRouter()
+
+  const { sessionId } = useAuth()
 
   const scheduleDateIdParam = params.get("scheduleDateId") ?? ''
 
@@ -54,6 +58,8 @@ export default function Component({
   const meetingCollaborationSession = meeting?.meetingRoom
 
   const collaborationSession = data?.collaborationSession
+
+  
 
   React.useEffect(() => {
     if (!data && !roomLoading) {

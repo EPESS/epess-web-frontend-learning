@@ -4,6 +4,7 @@ import { Client } from 'graphql-ws';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
 import DeltaQueue from "./DeltaQueue";
+import { useGetEventDocumentServerRequestSync } from "@/app/api/document";
 
 export enum EVENT_NAMES {
     TEXT_CHANGE = 'text-change',
@@ -89,6 +90,8 @@ export default class PageManager {
     public clientWS: Client;
     public deltaQueue: DeltaQueue;
     public documentId: string = ""
+    public userId: string = ""
+    public sessionId: string = ""
 
     get currentPageIndex() {
         return this._currentPageIndex;
@@ -105,31 +108,47 @@ export default class PageManager {
     }
 
     subscribeDocument = async (documentId: string) => {
-        for await (const result of this.clientWS.iterate<{ document: { delta: string, documentId: string, pageIndex: number } }>({
+        for await (const result of this.clientWS.iterate<{ document: { senderId: string, requestSync: boolean, delta: string, documentId: string, pageIndex: number } }>({
             query: `subscription Document {
     document(documentId: "${documentId}") {
         delta
         documentId
+        eventType
         pageIndex
+        requestSync
+        senderId
+        totalPage
     }
   }`
         })) {
-            if (result?.data?.document) {
+
+            if (result?.data?.document && (result?.data?.document.senderId !== this.userId)) {
                 // this.pages[result?.data?.document?.pageIndex].updateContents(JSON.parse(result.data?.document.delta), Quill.sources.SILENT);
                 this.applyDelta(JSON.parse(result.data?.document.delta), result?.data?.document?.pageIndex, Quill.sources.API);
             }
+
+            if (result?.data?.document?.requestSync) {
+                const delta = this.gotoPage(result?.data?.document?.pageIndex).getContents()
+                if (delta) {
+                    const { data } = await useGetEventDocumentServerRequestSync(this.sessionId, JSON.stringify(delta), this.documentId, result?.data?.document?.pageIndex)
+                    console.log(data);
+                }
+            };
         }
     }
 
-    constructor(docID: string, quill: Quill, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
+    constructor(sessionId: string, userId: string, docID: string, quill: Quill, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
         // initialize config
+        this.sessionId = sessionId
         this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
         this.Quill = Quill; // Quill class
         this.pushToPageList(quill);
         this.clientHTTP = clientHTTP;
         this.clientWS = clientWS;
+        this.userId = userId
         this.deltaQueue = deltaQueue;
         this.documentId = docID
+
         this.subscribeDocument(docID)
         // this.deltaManager = new DeltaManager(quill.getContents());
     }
@@ -245,6 +264,13 @@ export default class PageManager {
             source = Quill.sources.SILENT;
         }
         this.pages[pageIndex].updateContents(delta, source);
+    }
+
+    async setDelta(delta: Delta, pageIndex: number, source?: EmitterSource) {
+        if (!source) {
+            source = Quill.sources.SILENT;
+        }
+        this.pages[pageIndex].setContents(delta, source);
     }
 
     pushToPageList(page: Quill) {

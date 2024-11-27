@@ -1,1 +1,5 @@
 export * from './createDocument'
+export * from './eventDocumentServerRequestSync'
+export * from './subscriptionDocument'
+export * from './updateActiveDocument'
+export * from './updateDocument'

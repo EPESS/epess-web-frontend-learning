@@ -19,14 +19,13 @@ export default class DeltaQueue {
         while (this.queue.length > 0) {
             const data = this.pop();
             if (!data) continue;
-            console.log(data);
             const { delta, documentId, pageIndex } = data;
             const deltaStr = JSON.stringify(delta);
             // handle send delta to server  
             await this.clientHTTP.mutate({
                 mutation: gql`
-            mutation EventUpdateDocument($data: DocumentDeltaInput!) {
-              eventUpdateDocument(data: $data) {
+            mutation EventDocumentChanged($data: DocumentDeltaInput!) {
+              eventDocumentChanged(data: $data) {
                 delta
                 documentId 
                 pageIndex
