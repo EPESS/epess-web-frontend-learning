@@ -38,7 +38,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@clerk/nextjs';
 import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import { DropdownMenuCheckboxes } from '@/components/ui/dropdownMenuCheckboxes';
-import { useCreateDocument } from '@/app/api/document';
+import { useAddCollaborator, useCreateDocument } from '@/app/api/document';
 import DeltaQueue from './EditorClass/DeltaQueue';
 import { GLOBAL_MARGIN, PageConfiguration } from './EditorClass';
 import PageManager, { PAGE_SIZES } from './EditorClass/PageManagerClass';
@@ -93,6 +93,8 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
 
   const [updateDocument, { loading: loadingUpdateDocument }] = useUpdateDocument()
 
+  const [addCollaborator, { loading: loadingAddCollaborator }] = useAddCollaborator()
+
   const [title, setTitle] = useState(data?.collaborationSession?.activeDocument?.name)
   const [documentId, setDocumentId] = useState(data?.collaborationSession.activeDocumentId)
   const [paddingSize, setPaddingSize] = useState('10');
@@ -116,10 +118,10 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
   }
 
 
-  const handleNewFile = () => {
+  const handleNewFile = async () => {
     if (loadingNewFile) return;
     if (loadingUpdateActiveDocument) return;
-    createDocument({
+    const dataCreateDocument = await createDocument({
       onCompleted: (data) => {
         setDocumentId(data.createDocument.id)
         updateActiveDocument({
@@ -138,6 +140,22 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
         )
       }
     })
+
+    if (data?.collaborationSession?.collaboratorsIds?.length === 2) {
+      data?.collaborationSession.collaboratorsIds.map((id: string) => {
+        if (dataCreateDocument.data?.createDocument) {
+          addCollaborator({
+            variables: {
+              documentId: dataCreateDocument.data.createDocument.id,
+              userId: id
+            },
+            onError() {
+              toast.error(`Không thể thêm ${userId === id ? "bạn" : "giảng viên"} vào tài liệu`)
+            },
+          })
+        }
+      })
+    }
   }
 
   const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
@@ -196,10 +214,9 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
 
     if (!pageElement) return;
 
-    if (documentLoading || !documentData) {
+    if (documentLoading) {
       return; // Đợi dữ liệu tải xong
     }
-
 
     const newPageManager = new PageManager(
       sessionId ?? "",

@@ -14,6 +14,7 @@ type TActiveDocument = {
 export type TCollaborationSession = {
     activeDocumentId: string;
     chatRoomId: string;
+    collaboratorsIds: string[]
     createdAt: string;
     id: string;
     updatedAt: string;
@@ -43,6 +44,7 @@ query CollaborationSession ($scheduleDateId: String!) {
         createdAt
         id
         updatedAt
+        collaboratorsIds
         activeDocument {
             createdAt
             fileUrl

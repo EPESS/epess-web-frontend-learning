@@ -128,10 +128,11 @@ export default class PageManager {
             }
 
             if (result?.data?.document?.requestSync) {
+                console.log("meow meow");
+                
                 const delta = this.gotoPage(result?.data?.document?.pageIndex).getContents()
                 if (delta) {
                     const { data } = await useGetEventDocumentServerRequestSync(this.sessionId, JSON.stringify(delta), this.documentId, result?.data?.document?.pageIndex)
-                    console.log(data);
                 }
             };
         }
