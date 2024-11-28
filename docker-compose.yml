@@ -22,8 +22,11 @@ services:
     networks:
       - epess-net
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.learning.rule=Host(`learning.epess.org`)
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.learning.rule=Host(`learning.epess.org`)'
+      - 'traefik.http.routers.learning.entrypoints=web'
+      - 'traefik.http.routers.learning.service=learning'
+      - 'traefik.http.services.learning.loadbalancer.server.port=3000'
 networks:
   epess-net:
     driver: bridge
