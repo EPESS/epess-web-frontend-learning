@@ -15,8 +15,8 @@ services:
       LIVEKIT_API_KEY: API9imca9hBiQ7w
       LIVEKIT_API_SECRET: 75bhDbSrTpBTjWpcYRDM0fCAdcjHi3u6OFVNJe9Acx0
       NEXT_PUBLIC_LIVEKIT_URL: https://meet.epess.org
-      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
-      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
+      # NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
+      # NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
     ports:
       - 5203:3000
     networks:

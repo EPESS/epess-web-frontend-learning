@@ -67,7 +67,7 @@ export function UserNav() {
           className='w-full'
           variant='outline'
         >
-          <SignOutButton redirectUrl='/auth/sign-in'>
+          <SignOutButton>
             <DropdownMenuItem className='hover:cursor-pointer'>
               <p className='flex items-center gap-2'>
                 <LogOut className='w-4 h-4 text-muted-foreground' />
