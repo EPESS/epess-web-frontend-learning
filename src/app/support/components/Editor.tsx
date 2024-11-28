@@ -86,20 +86,6 @@ type TEditor = {
 export default function Editor({ collaborationId, loading, data, handleRefetch }: TEditor) {
 
   const { data: documentData, loading: documentLoading } = useGetEventDocumentClientRequestSync(data?.collaborationSession.activeDocumentId ?? "", 0)
-  const [title, setTitle] = useState(data?.collaborationSession?.activeDocument?.name)
-  const [documentId, setDocumentId] = useState(data?.collaborationSession.activeDocumentId)
-  const pageRef = useRef<HTMLDivElement | null>(null);
-  const [pageManager, setPageManager] = useState<PageManager | null>(null);
-  const [paddingSize, setPaddingSize] = useState('10');
-  const { userId, sessionId } = useAuth();
-  const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
-  const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
-  const deltaQueue = new DeltaQueue(clientHTTP);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
-  const [headerValue, setHeaderValue] = useState('default');
-  const [showHeaders, setShowHeaders] = useState(false);
-  const [selectedHeader, setSelectedHeader] = useState<string>("Normal");
 
   const [createDocument, { loading: loadingNewFile }] = useCreateDocument(collaborationId)
 
@@ -107,14 +93,27 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
 
   const [updateDocument, { loading: loadingUpdateDocument }] = useUpdateDocument()
 
+  const [title, setTitle] = useState(data?.collaborationSession?.activeDocument?.name)
+  const [documentId, setDocumentId] = useState(data?.collaborationSession.activeDocumentId)
+  const [paddingSize, setPaddingSize] = useState('10');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [headerValue, setHeaderValue] = useState('default');
+  const [showHeaders, setShowHeaders] = useState(false);
+  const [selectedHeader, setSelectedHeader] = useState<string>("Normal");
+
+  const pageRef = useRef<HTMLDivElement | null>(null);
+
+  const { userId, sessionId } = useAuth();
+
+  const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
+  const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
+
+  const deltaQueue = new DeltaQueue(clientHTTP);
+  const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
+
   const handleSelectHeader = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setHeaderValue(event.target.value);
   }
-
-
-
-
-  const documentDataRef = useRef(documentData)
 
 
   const handleNewFile = () => {
@@ -144,63 +143,6 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
   const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
     console.log("hahahahaha", data.collaborationSessionUpdated);
   }
-
-  useEffect(() => {
-    documentDataRef.current = documentData
-  }, [documentData])
-
-  useEffect(() => {
-    setTitle(data?.collaborationSession?.activeDocument?.name)
-  }, [data])
-
-  useEffect(() => {
-    setPageManager(null);
-  }, [documentId])
-
-  useEffect(() => {
-    // initialize page config
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length) {
-          const pageElement = document.getElementById('page-0');
-
-          if (pageElement && !pageManager) {
-            const newPageManager = new PageManager(
-              sessionId ?? "",
-              userId ?? "",
-              documentId ?? "",
-              PageManager.newQuill(pageElement),
-              clientHTTP,
-              clientWS,
-              deltaQueue
-            );
-
-            if (documentData) {
-              console.log(123);
-
-              newPageManager.setDelta(documentData?.eventDocumentClientRequestSync?.delta, 0, 'silent')
-            }
-
-            setPageManager(newPageManager);
-            // attach toolbar to page
-            newPageManager.attachToolbarToPage(0);
-            observer.disconnect();
-          }
-        }
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    return () => observer.disconnect();
-  }, [pageManager, documentId, documentData, documentDataRef, documentLoading]);
-
-  useEffect(() => {
-    useGetCollaborationSessionUpdated(sessionId, collaborationId, handleNewFileSubscription)
-  }, [])
 
   const handleFileEvent = (value: string) => {
     switch (value) {
@@ -244,9 +186,45 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
       }
     })
   }
-  (async () => {
+
+  useEffect(() => {
+    setTitle(data?.collaborationSession?.activeDocument?.name)
+  }, [data])
+
+  useEffect(() => {
+    const pageElement = document.getElementById('page-0');
+
+    if (!pageElement) return;
+
+    if (documentLoading || !documentData) {
+      return; // Đợi dữ liệu tải xong
+    }
+
+
+    const newPageManager = new PageManager(
+      sessionId ?? "",
+      userId ?? "",
+      documentId ?? "",
+      PageManager.newQuill(pageElement),
+      clientHTTP,
+      clientWS,
+      deltaQueue
+    );
+
+    if (documentData) {
+      newPageManager.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), 0, 'silent')
+    }
+    newPageManager.attachToolbarToPage(0);
+
+  }, [documentData, documentLoading]);
+
+  useEffect(() => {
+    useGetCollaborationSessionUpdated(sessionId, collaborationId, handleNewFileSubscription)
+  }, []);
+
+  (() => {
     deltaQueue.emit();
-  })();
+  })()
 
   return (
     <div className='flex w-full h-full'>
@@ -274,7 +252,8 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
                   buttonLabel={
                     <Button variant='ghost' className='px-0 h-6'>
                       File
-                    </Button>}
+                    </Button>
+                  }
                   handleOnChange={(value) => handleFileEvent(value as string)}
                   options={[
                     { label: "New", value: "new" },
@@ -427,9 +406,7 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
                 {/* color picker */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant='ghost' className='px-0 h-6'>
-                      <MoreHorizontalIcon className='w-4 h-4' />
-                    </Button>
+                    <MoreHorizontalIcon className='w-4 h-4' />
                   </PopoverTrigger>
                   <PopoverContent>
                     <div>

@@ -3,7 +3,7 @@ import { Delta } from "quill/core";
 
 export type EventDocumentClientRequestSyncResponse = {
     eventDocumentClientRequestSync: {
-        delta: Delta
+        delta: Delta | string
         documentId: string
         eventType: string
         pageIndex: number

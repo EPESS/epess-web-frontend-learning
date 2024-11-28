@@ -292,7 +292,6 @@ export default class PageManager {
                 this.deletePage(this.pages.indexOf(page));
             }
 
-
             this.deltaQueue.push({
                 delta: delta,
                 documentId: this.documentId,
