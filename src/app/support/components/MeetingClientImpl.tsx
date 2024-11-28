@@ -166,6 +166,7 @@ function VideoConferenceComponent(props: {
       },
       audioCaptureDefaults: {
         deviceId: props.userChoices.audioDeviceId ?? undefined,
+        echoCancellation:true
       },
       adaptiveStream: { pixelDensity: 'screen' },
       dynacast: true,
