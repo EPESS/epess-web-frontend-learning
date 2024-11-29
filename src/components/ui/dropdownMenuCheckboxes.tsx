@@ -18,7 +18,8 @@ type TDropdownMenuCheckboxes = {
     handleOnChange: (value: string | number | null | (string | number | null)[]) => void
     options: TDropdown[] | undefined,
     buttonLabel: React.ReactNode,
-    defaultValue?: string | number
+    defaultValue?: string | number,
+    isOpenAfterClick?:boolean
 }
 
 type TDropdown = {
@@ -27,7 +28,7 @@ type TDropdown = {
     checked?: boolean
 }
 
-export const DropdownMenuCheckboxes = ({ options, handleOnChange, buttonLabel, defaultValue, multiple }: TDropdownMenuCheckboxes) => {
+export const DropdownMenuCheckboxes = ({ options, handleOnChange, isOpenAfterClick = true, buttonLabel, defaultValue, multiple }: TDropdownMenuCheckboxes) => {
     const [value, setValue] = useState<string | number | null>(defaultValue ?? null)
     const [values, setValues] = useState<(string | number | null)[] | null>([])
     const [open, setOpen] = useState(false)
@@ -76,7 +77,7 @@ export const DropdownMenuCheckboxes = ({ options, handleOnChange, buttonLabel, d
                             key={index}
                             checked={multiple ? values?.includes(item.value) : value === item.value}
                             onClick={(e) => {
-                                e.stopPropagation();
+                                isOpenAfterClick && e.stopPropagation();
                                 handleClick(item)
                             }}
                         >

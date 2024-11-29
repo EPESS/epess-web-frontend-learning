@@ -41,5 +41,5 @@ export const useGetEventDocumentServerRequestSync = (
     delta: any,
     documentId: string,
     pageIndex: number) => {
-    return createApolloClient(sessionId).mutate<EventDocumentServerRequestSyncResponse, EventDocumentServerRequestSyncDTO>({ mutation: EVENTDOCUMENTSERVERSYNCSYNC, variables: { delta, documentId, pageIndex }, })
+    return createApolloClient(sessionId).mutate<EventDocumentServerRequestSyncResponse, EventDocumentServerRequestSyncDTO>({ mutation: EVENTDOCUMENTSERVERSYNCSYNC, variables: { delta, documentId, pageIndex } })
 }

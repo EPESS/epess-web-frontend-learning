@@ -27,7 +27,7 @@ export default function RootLayout({
       <ApolloClientProvider>
         <html lang='en'>
           <body className='light'>
-            <ToastContainer />
+            <ToastContainer limit={3} />
             {children}
           </body>
         </html>

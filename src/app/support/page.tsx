@@ -73,10 +73,10 @@ export default function Component({
   }
 
   return (
-    <div className='flex gap-5 w-full h-screen overflow-hidden'>
+    <div className='flex gap-5 w-full'>
       {/* Slice 1 with dynamic width */}
       <div
-        className={cn('transition-all duration-1000 ease-in-out h-screen')}
+        className={cn('transition-all duration-1000 ease-in-out')}
         style={{
           // con lạy cụ tỷ lệ vàng
           width: isMeetingAndChatOpen

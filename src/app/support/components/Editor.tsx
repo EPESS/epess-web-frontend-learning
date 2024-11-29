@@ -49,6 +49,7 @@ import { toast } from 'react-toastify';
 import { useUpdateDocument } from '@/app/api/document/updateDocument';
 import { TCollaborationSessionUpdated, useGetCollaborationSessionUpdated } from '@/app/api/support-room/collaborationSessionUpdated';
 import { EventDocumentClientRequestSyncResponse, useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDocumentClientRequestSync';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 
@@ -103,7 +104,8 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
   const [showHeaders, setShowHeaders] = useState(false);
   const [selectedHeader, setSelectedHeader] = useState<string>("Normal");
 
-  const pageRef = useRef<HTMLDivElement | null>(null);
+  const documentRef = useRef<HTMLDivElement | null>(null)
+  const pageElement = useRef<HTMLDivElement | null>(null)
 
   const { userId, sessionId } = useAuth();
 
@@ -113,10 +115,26 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
   const deltaQueue = new DeltaQueue(clientHTTP);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
 
+
+  const newPageManagerRef = useRef<PageManager | null>(null)
+
+  useEffect(() => {
+    if (pageElement.current) {
+      newPageManagerRef.current = new PageManager(
+        sessionId ?? "",
+        userId ?? "",
+        documentId ?? "",
+        PageManager.newQuill(pageElement.current),
+        clientHTTP,
+        clientWS,
+        deltaQueue
+      )
+    }
+  }, [pageElement])
+
   const handleSelectHeader = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setHeaderValue(event.target.value);
   }
-
 
   const handleNewFile = async () => {
     if (loadingNewFile) return;
@@ -205,33 +223,48 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
     })
   }
 
+
+  const handleScroll = async () => {
+    if (documentRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = documentRef.current;
+      console.log("scrollTop", scrollTop);
+      console.log("scrollHeight", scrollHeight);
+      console.log("clientHeight", clientHeight);
+
+
+      if (scrollHeight - (scrollTop + clientHeight) <= 50) {
+        toast.error("deocogixayraroi");
+
+        newPageManagerRef.current?.loadNext()
+      }
+    }
+  };
+
+
+  useEffect(() => {
+    const documentRefCurrent = documentRef.current;
+    if (documentRefCurrent) {
+      documentRefCurrent.addEventListener('scroll', handleScroll);
+    }
+  }, [])
+
   useEffect(() => {
     setTitle(data?.collaborationSession?.activeDocument?.name)
   }, [data])
 
   useEffect(() => {
-    const pageElement = document.getElementById('page-0');
-
+    if (!newPageManagerRef.current) return;
     if (!pageElement) return;
 
     if (documentLoading) {
       return; // Đợi dữ liệu tải xong
     }
 
-    const newPageManager = new PageManager(
-      sessionId ?? "",
-      userId ?? "",
-      documentId ?? "",
-      PageManager.newQuill(pageElement),
-      clientHTTP,
-      clientWS,
-      deltaQueue
-    );
 
     if (documentData) {
-      newPageManager.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), 0, 'silent')
+      newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), 0, 'silent')
     }
-    newPageManager.attachToolbarToPage(0);
+    newPageManagerRef.current.attachToolbarToPage(0);
 
   }, [documentData, documentLoading]);
 
@@ -266,6 +299,7 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
               {/* Menu bar */}
               <div className='flex items-center gap-3'>
                 <DropdownMenuCheckboxes
+                  isOpenAfterClick={false}
                   buttonLabel={
                     <Button variant='ghost' className='px-0 h-6'>
                       File
@@ -478,38 +512,37 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
         </div>
 
         {/* maintain min height equal to page size * 1.5 */}
-        {
-          loading || loadingNewFile ?
-            <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-              <ScaleLoader />
-            </div>
-            :
-            data?.collaborationSession.activeDocumentId &&
-            <div key={documentId} className='z-0 flex justify-center bg-gray-50 px-20 pt-4 rounded-lg w-full h-screen overflow-y-scroll no-scrollbar'>
-              <div
-                className='pb-56 min-h-full overflow-x-hidden overflow-y-auto no-scrollbar'
-                style={{
-                  transform: `scale(${zoomLevel})`,
-                  transformOrigin: 'top left',
-                }}
-              >
-                <div
-                  id='page-0'
-                  ref={pageRef}
-                  // add padding size based on padding size state
-                  // add cn to get padding size 
-                  // className={cn('bg-white drop-shadow-lg min-h-full overflow-x-hidden overflow-y-auto', getPaddingSize(paddingSize))}
-                  className='bg-white drop-shadow-lg min-h-full overflow-x-hidden overflow-y-auto'
-                  style={{
-                    width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
-                    height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
-                    margin: `${pageConfig.margin}px`,
-                  }}
-                />{' '}
-                {/* quill editor */}
+        <ScrollArea ref={documentRef} className='h-full pb-10 overflow-y-auto'>
+          {
+            loading || loadingNewFile ?
+              <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                <ScaleLoader />
               </div>
-            </div>
-        }
+              :
+              data?.collaborationSession.activeDocumentId &&
+              <div key={documentId} className='z-0 flex justify-center bg-gray-50 px-20 pt-4 h-screen rounded-lg w-full '>
+                <div
+                  style={{
+                    transform: `scale(${zoomLevel})`,
+                    transformOrigin: 'top left',
+                  }}
+                >
+                  <div
+                    ref={pageElement}
+                    id='page-0'
+                    className='bg-white drop-shadow-lg'
+                    style={{
+                      width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                      height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
+                      margin: `${pageConfig.margin}px`,
+                    }}
+                  >{' '}
+                  </div>
+                  {/* quill editor */}
+                </div>
+              </div>
+          }
+        </ScrollArea>
       </div>
     </div>
   );

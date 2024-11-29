@@ -1,10 +1,11 @@
-import { ApolloClient } from "@apollo/client";
 import Toolbar from "quill/modules/toolbar";
 import { Client } from 'graphql-ws';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
 import DeltaQueue from "./DeltaQueue";
 import { useGetEventDocumentServerRequestSync } from "@/app/api/document";
+import { ApolloClient } from "@apollo/client";
+import { toast } from "react-toastify";
 
 export enum EVENT_NAMES {
     TEXT_CHANGE = 'text-change',
@@ -94,13 +95,13 @@ export default class PageManager {
     public sessionId: string = ""
 
     get currentPageIndex() {
+
         return this._currentPageIndex;
     }
     set currentPageIndex(index: number) {
         this._currentPageIndex = index;
         this.attachToolbarToPage(index);
     }
-
     get toolbar() {
         return new Toolbar(this.pages[this.currentPageIndex], {
             container: document.getElementById('toolbar'),
@@ -129,10 +130,10 @@ export default class PageManager {
 
             if (result?.data?.document?.requestSync) {
                 console.log("meow meow");
-                
+
                 const delta = this.gotoPage(result?.data?.document?.pageIndex).getContents()
                 if (delta) {
-                    const { data } = await useGetEventDocumentServerRequestSync(this.sessionId, JSON.stringify(delta), this.documentId, result?.data?.document?.pageIndex)
+                    await useGetEventDocumentServerRequestSync(this.sessionId, JSON.stringify(delta), this.documentId, result?.data?.document?.pageIndex)
                 }
             };
         }
@@ -209,6 +210,7 @@ export default class PageManager {
         this.pushToPageList(newQuill);
         return newQuill;
     }
+
     deletePage(index: number): boolean {
         try {
             this.pages.splice(index, 1);
@@ -224,7 +226,8 @@ export default class PageManager {
 
     getCurrentCursor() {
         const currentPosition: number =
-            Number(this.getCurrentPage().getSelection()?.index) || 0;
+            Number(this.getCurrentPage()?.getSelection()?.index) || 0;
+
         return currentPosition;
     }
 
@@ -241,7 +244,6 @@ export default class PageManager {
     }
 
     getCurrentPage() {
-        console.log(this.pages);
         return this.pages[this.currentPageIndex];
     }
 
@@ -249,6 +251,10 @@ export default class PageManager {
         if (this.currentPageIndex + 1 < this.pages.length) {
             return this.pages[this.currentPageIndex + 1];
         }
+        return this.newJSXPage(document);
+    }
+
+    loadNext() {
         return this.newJSXPage(document);
     }
 
@@ -275,8 +281,38 @@ export default class PageManager {
     }
 
     pushToPageList(page: Quill) {
+        var tooltip = document.createElement('div');
+        var updateLoading = false
+
         // pre push section
         // register event listener
+        document.addEventListener("keydown", async (e) => {
+
+            if (e.key === "Backspace" || e.key === "Delete") {
+                tooltip.style.display = 'none'; // Ban đầu ẩn đi
+                return;
+            }
+
+            if (!updateLoading && e.ctrlKey && e.key === "s") {
+                e.preventDefault()
+                const delta = this.gotoPage(this.currentPageIndex).getContents()
+                updateLoading = true
+                if (delta) {
+                    const dataUseGetEventDocumentServerRequestSync = await useGetEventDocumentServerRequestSync(this.sessionId, JSON.stringify(delta), this.documentId, this.currentPageIndex)
+                    if (dataUseGetEventDocumentServerRequestSync.data) {
+                        toast.success("Cập nhật thành công")
+                        updateLoading = false
+                    } else {
+                        toast.error("Cập nhật thất bại")
+                        updateLoading = false
+                    }
+                }
+                return;
+            }
+        })
+
+
+
         page.on(EVENT_NAMES.TEXT_CHANGE, (delta, oldDelta, source) => {
             if (source === Quill.sources.SILENT) {
                 return;
@@ -306,6 +342,7 @@ export default class PageManager {
         });
 
         page.on(EVENT_NAMES.EDITOR_CHANGE, (eventName, ...args) => {
+
             // Check if the current page is overflowing
             if (PageManager.isPageOverflowing(page)) {
                 console.log('page is overflowing');
@@ -318,18 +355,47 @@ export default class PageManager {
                 this.attachToolbarToPage(this.currentPageIndex);
             }
         });
-        page.on(EVENT_NAMES.SELECTION_CHANGE, (eventName, ...args) => {
-            // console.log(eventName, args);
-            if (args[0] !== null) return;
-            // check if current page index change
-            if (this.currentPageIndex !== this.pages.indexOf(page)) {
-                console.log('current page index change');
-                this.currentPageIndex = this.pages.indexOf(page);
-            }
-            else {
-                console.log('only selection change');
-            }
+        page.on(EVENT_NAMES.SELECTION_CHANGE, (range) => {
+            var editor = document.querySelector(`#page-${this.currentPageIndex} .ql-editor`);
+            if (!editor) return
+            var editorOffset = editor?.getBoundingClientRect();
 
+            if (range) {
+                tooltip.style.maxWidth = "700px"
+                tooltip.style.minWidth = "300px"
+                tooltip.style.maxHeight = "170px"
+                tooltip.style.overflowY = "auto"
+                tooltip.style.zIndex = "100"
+                tooltip.style.whiteSpace = "normal"
+                tooltip.style.wordBreak = "break-word"
+                tooltip.id = 'tooltip';
+                tooltip.style.display = 'none'; // Ban đầu ẩn đi
+                tooltip.style.position = 'absolute';
+                document.body.appendChild(tooltip);
+
+                if (range.length == 0) {
+                    console.log('User cursor is on', range.index);
+                    tooltip.style.display = 'none';
+                } else {
+                    const text = this.getCurrentPage().getText(range.index, range.length);
+                    console.log('User has highlighted', text);
+                    var bounds = this.getCurrentPage().getBounds(range);
+                    console.log("bounds", bounds);
+
+
+                    if (bounds) {
+                        tooltip.innerText = `${text}`
+                        tooltip.style.display = 'block';
+                        tooltip.style.position = "absolute"
+                        tooltip.style.top = `${editorOffset.top + bounds.top - tooltip.offsetHeight - 5}px`;
+                        tooltip.style.left = `${editorOffset.left + bounds.left + 5}px`;
+                        tooltip.style.height = "auto"
+                    }
+                }
+            } else {
+                tooltip.style.display = 'none'; // Ban đầu ẩn đi
+                console.log('Cursor not in the editor');
+            }
         });
         // push to page list
         this.pages.push(page);
@@ -388,6 +454,8 @@ export default class PageManager {
     }
 
     attachToolbarToPage(index: number) {
+        if (this.pages[index].options.modules.toolbar) return;
+
         this.pages[index].options.modules.toolbar = this.toolbar;
     }
 
