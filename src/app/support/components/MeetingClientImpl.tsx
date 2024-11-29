@@ -26,6 +26,7 @@ import {
   Track,
   RoomEvent,
   Participant,
+  MediaDeviceFailure,
 } from 'livekit-client';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -42,13 +43,12 @@ declare const window: Window | undefined;
 const CONN_DETAILS_ENDPOINT = '/api/connection-details';
 
 function MeetingClientImplCpn(props: {
-  loading?: boolean
+  loading?: boolean;
   roomName: string;
   hq: boolean; // high quality
   codec: VideoCodec;
   user: User;
 }) {
-
   const [preJoinChoices, setPreJoinChoices] = useState<
     LocalUserChoices | undefined
   >(undefined);
@@ -80,7 +80,6 @@ function MeetingClientImplCpn(props: {
           const hasCamera = devices.some(
             (device) => device.kind === 'videoinput'
           );
-
           setPreJoinChoices({
             username: props.user.name.trim(),
             audioEnabled: hasMicrophone,
@@ -93,7 +92,6 @@ function MeetingClientImplCpn(props: {
                 ?.deviceId || '',
           });
         })
-
         .catch((error) => {
           console.error('Error accessing media devices: ', error);
         });
@@ -146,6 +144,17 @@ function VideoConferenceComponent(props: {
     codec: VideoCodec;
   };
 }) {
+  const [isConnecting, setIsConnecting] = React.useState<boolean | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    //check for media devices permission
+    isMediaDevicePermissionGranted().then((granted) => {
+      setIsConnecting(granted);
+    });
+  }, []);
+
   const roomOptions = React.useMemo((): RoomOptions => {
     let videoCodec: VideoCodec | undefined = props.options.codec
       ? props.options.codec
@@ -166,7 +175,7 @@ function VideoConferenceComponent(props: {
       },
       audioCaptureDefaults: {
         deviceId: props.userChoices.audioDeviceId ?? undefined,
-        echoCancellation:true
+        echoCancellation: true,
       },
       adaptiveStream: { pixelDensity: 'screen' },
       dynacast: true,
@@ -204,18 +213,51 @@ function VideoConferenceComponent(props: {
       console.error(e);
       return;
     }
+    if (e.name === 'NotAllowedError' && e.message === 'Permission denied') {
+      // ask user to allow access to microphone and camera
+    }
     console.error(e);
   }, []);
+
+  const handleMediaDeviceFailure = React.useCallback(
+    (failure?: MediaDeviceFailure) => {
+      console.log(failure);
+    },
+    []
+  );
 
   const isMeetingAndChatOpen = useStore(
     useToggleMeetingAndChat,
     (state) => state.isMeetingAndChatOpen
   );
 
+  if (isConnecting === undefined) {
+    return null;
+  }
+
+  if (!isConnecting) {
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      let hasMicrophone = devices.some(
+        (device) => device.kind === 'audioinput'
+      );
+      let hasCamera = devices.some((device) => device.kind === 'videoinput');
+      navigator.mediaDevices
+        .getUserMedia({ video: hasCamera, audio: hasMicrophone })
+        .then(() => {
+          isMediaDevicePermissionGranted().then((granted) => {
+            setIsConnecting(granted);
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    });
+  }
+
   return (
     <>
       <LiveKitRoom
-        connect={true}
+        connect={isConnecting}
         room={room}
         token={props.connectionDetails.participantToken}
         serverUrl={props.connectionDetails.serverUrl}
@@ -224,6 +266,7 @@ function VideoConferenceComponent(props: {
         audio={props.userChoices.audioEnabled}
         onDisconnected={handleOnLeave}
         onError={handleError}
+        onMediaDeviceFailure={handleMediaDeviceFailure}
         className='flex flex-col justify-center items-center bg-white shadow-lg rounded-lg w-full h-full'
       >
         <VideoConference
@@ -418,4 +461,16 @@ export function isTrackReferencePlaceholder(
     trackReference.hasOwnProperty('source') &&
     typeof trackReference.publication === 'undefined'
   );
+}
+
+async function isMediaDevicePermissionGranted() {
+  return navigator.mediaDevices.enumerateDevices().then((devices) => {
+    return devices.some(
+      (device) =>
+        (device.kind === 'audioinput' || device.kind === 'videoinput') &&
+        !!device.label &&
+        !!device.deviceId &&
+        !!device.groupId
+    );
+  });
 }

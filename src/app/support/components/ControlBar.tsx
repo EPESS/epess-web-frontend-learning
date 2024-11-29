@@ -124,7 +124,7 @@ export function ControlBar({
                   error,
                 })
               }
-              className='!rounded-none !rounded-tl-lg !rounded-tr-lg w-full'
+              className='!rounded-none !rounded-tl-lg !rounded-tr-lg w-full !bg-gray-100 hover:!bg-gray-200 !text-black !px-3 !py-2'
             />
             <div className='flex justify-center items-center bg-zinc-900 rounded-b-lg w-full lk-button-group-menu vertical'>
               <MediaDeviceMenu
@@ -145,7 +145,7 @@ export function ControlBar({
               onDeviceError={(error) =>
                 onDeviceError?.({ source: Track.Source.Camera, error })
               }
-              className='!rounded-none !rounded-tl-lg !rounded-tr-lg w-full'
+              className='!rounded-none !rounded-tl-lg !rounded-tr-lg w-full !bg-gray-100 hover:!bg-gray-200 !text-black !px-3 !py-2'
             />
             <div className='flex justify-center items-center bg-zinc-900 rounded-b-lg w-full lk-button-group-menu vertical'>
               <MediaDeviceMenu
@@ -158,7 +158,7 @@ export function ControlBar({
           </div>
         )}
         {visibleControls.leave && (
-          <DisconnectButton className='border-[#f91f31] !bg-zinc-800 hover:bg-[#f91f31] border border-solid text-[#f91f31] hover:text-white'>
+          <DisconnectButton className='border-[#f91f31] hover:!bg-[#f91f31] border border-solid !text-[#f91f31] !bg-gray-100 hover:!text-white !px-3 !py-2'>
             <LeaveIcon />
           </DisconnectButton>
         )}
