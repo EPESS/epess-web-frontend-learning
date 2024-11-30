@@ -281,8 +281,8 @@ export default class PageManager {
     }
 
     pushToPageList(page: Quill) {
-        var tooltip = document.createElement('div');
-        var updateLoading = false
+        let tooltip = document.createElement('div');
+        let updateLoading = false
 
         // pre push section
         // register event listener
@@ -356,9 +356,9 @@ export default class PageManager {
             }
         });
         page.on(EVENT_NAMES.SELECTION_CHANGE, (range) => {
-            var editor = document.querySelector(`#page-${this.currentPageIndex} .ql-editor`);
+            let editor = document.querySelector(`#page-${this.currentPageIndex} .ql-editor`);
             if (!editor) return
-            var editorOffset = editor?.getBoundingClientRect();
+            let editorOffset = editor?.getBoundingClientRect();
 
             if (range) {
                 tooltip.style.maxWidth = "700px"
@@ -379,7 +379,7 @@ export default class PageManager {
                 } else {
                     const text = this.getCurrentPage().getText(range.index, range.length);
                     console.log('User has highlighted', text);
-                    var bounds = this.getCurrentPage().getBounds(range);
+                    let bounds = this.getCurrentPage().getBounds(range);
                     console.log("bounds", bounds);
 
 
