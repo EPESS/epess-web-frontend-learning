@@ -16,7 +16,7 @@ import { useJoinRoomQuery } from '../api/support-room';
 import { useGetMeetingRoom } from '../api/meeting-room';
 import { toast } from 'react-toastify';
 import { useGetCollaborationSessionUpdated } from '../api/support-room/collaborationSessionUpdated';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 const Editor = dynamic(() => import("../support/components/Editor"))
 
@@ -32,7 +32,6 @@ export default function Component({
 
   const router = useRouter()
 
-  const { sessionId } = useAuth()
 
   const scheduleDateIdParam = params.get("scheduleDateId") ?? ''
 
@@ -49,6 +48,8 @@ export default function Component({
 
   const { toggleMeetingAndChat } = useToggleMeetingAndChat();
 
+  const { user: userClerk } = useUser()
+
   const { user, userLoading } = useMe();
 
   const { loading: roomLoading, data, refetch } = useJoinRoomQuery(scheduleDateIdParam)
@@ -59,12 +60,10 @@ export default function Component({
 
   const collaborationSession = data?.collaborationSession
 
-  
-
   React.useEffect(() => {
-    if (!data && !roomLoading) {
+    if (!data && !roomLoading && !collaborationSession?.collaboratorsIds.includes(user?.id ?? "")) {
       router.push(LEARNING_URL)
-      toast.warning("Không có lớp học này vui lòng liên hệ lại giảng viên !")
+      toast.warning("Lớp học không tồn tại vui lòng liên hệ lại giảng viên !")
     }
   }, [roomLoading])
 
