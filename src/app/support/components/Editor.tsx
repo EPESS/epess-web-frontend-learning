@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 
@@ -50,6 +50,7 @@ import { useUpdateDocument } from '@/app/api/document/updateDocument';
 import { TCollaborationSessionUpdated, useGetCollaborationSessionUpdated } from '@/app/api/support-room/collaborationSessionUpdated';
 import { EventDocumentClientRequestSyncResponse, useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDocumentClientRequestSync';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Delta } from 'quill/core';
 
 
 
@@ -86,7 +87,9 @@ type TEditor = {
 
 export default function Editor({ collaborationId, loading, data, handleRefetch }: TEditor) {
 
-  const { data: documentData, loading: documentLoading } = useGetEventDocumentClientRequestSync(data?.collaborationSession.activeDocumentId ?? "", 0)
+  const [page, setPage] = useState(0)
+
+  const { data: documentData, loading: documentLoading, fetchMore } = useGetEventDocumentClientRequestSync(data?.collaborationSession.activeDocumentId ?? "", page)
 
   const [createDocument, { loading: loadingNewFile }] = useCreateDocument(collaborationId)
 
@@ -106,6 +109,7 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
 
   const documentRef = useRef<HTMLDivElement | null>(null)
   const pageElement = useRef<HTMLDivElement | null>(null)
+  const documentLoadingRef = useRef<boolean>(documentLoading)
 
   const { userId, sessionId } = useAuth();
 
@@ -119,6 +123,12 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
   const newPageManagerRef = useRef<PageManager | null>(null)
 
   useEffect(() => {
+    documentLoadingRef.current = documentLoading
+  }, [documentLoading])
+
+  useEffect(() => {
+    if (newPageManagerRef.current) return
+
     if (pageElement.current) {
       newPageManagerRef.current = new PageManager(
         sessionId ?? "",
@@ -223,28 +233,52 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
     })
   }
 
+  const scrollToBottom = (height: number) => {
+    setTimeout(() => {
+      if (documentRef.current) {
+        documentRef.current.scrollTop = height;
+        documentRef.current.style.scrollBehavior = 'smooth';
+      }
+    }, 300);
+  };
 
   const handleScroll = async () => {
-    if (documentRef.current) {
+    console.log("hahaha");
+
+
+    if (newPageManagerRef.current && documentRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = documentRef.current;
-      console.log("scrollTop", scrollTop);
-      console.log("scrollHeight", scrollHeight);
-      console.log("clientHeight", clientHeight);
+
+      if (scrollHeight - (scrollTop + clientHeight) < 10) {
+        if (documentLoadingRef.current) return;
+
+        setPage(prev => {
+          (async () => {
+            const fetchMoreData = await fetchMore({
+              variables: {
+                documentId: data?.collaborationSession.activeDocumentId,
+                pageIndex: prev + 2
+              }
+            })
+
+            console.log("fetchMoreData", fetchMoreData);
 
 
-      if (scrollHeight - (scrollTop + clientHeight) <= 50) {
-        toast.error("deocogixayraroi");
+            if (fetchMoreData.data.eventDocumentClientRequestSync.delta === null) {
+              documentRef.current?.removeEventListener('scroll', handleScroll);
+            }
+          })()
 
-        newPageManagerRef.current?.loadNext()
+          return prev + 1
+        }
+        )
       }
     }
   };
 
-
   useEffect(() => {
-    const documentRefCurrent = documentRef.current;
-    if (documentRefCurrent) {
-      documentRefCurrent.addEventListener('scroll', handleScroll);
+    if (documentRef.current) {
+      documentRef.current.addEventListener("scroll", handleScroll)
     }
   }, [])
 
@@ -257,16 +291,18 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
     if (!pageElement) return;
 
     if (documentLoading) {
-      return; // Đợi dữ liệu tải xong
+      return;
     }
 
-
-    if (documentData) {
-      newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), 0, 'silent')
+    if (documentData && page === 0) {
+      newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), page, 'silent')
+      newPageManagerRef.current.attachToolbarToPage(0);
+    } else {
+      newPageManagerRef.current?.loadNextWithData(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string))
+      newPageManagerRef.current.attachToolbarToPage(page);
     }
-    newPageManagerRef.current.attachToolbarToPage(0);
 
-  }, [documentData, documentLoading]);
+  }, [documentData]);
 
   useEffect(() => {
     useGetCollaborationSessionUpdated(sessionId, collaborationId, handleNewFileSubscription)
@@ -512,37 +548,35 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
         </div>
 
         {/* maintain min height equal to page size * 1.5 */}
-        <ScrollArea ref={documentRef} className='h-full pb-10 overflow-y-auto'>
-          {
-            loading || loadingNewFile ?
-              <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-                <ScaleLoader />
-              </div>
-              :
-              data?.collaborationSession.activeDocumentId &&
-              <div key={documentId} className='z-0 flex justify-center bg-gray-50 px-20 pt-4 h-screen rounded-lg w-full '>
+        {
+          loading || loadingNewFile ?
+            <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+              <ScaleLoader />
+            </div>
+            :
+            data?.collaborationSession.activeDocumentId &&
+            <ScrollArea ref={documentRef} key={documentId} className='z-0 flex justify-center pb-10 overflow-y-auto bg-gray-50 px-20 pt-4 h-screen rounded-lg w-full '>
+              <div
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'top left',
+                }}
+              >
                 <div
+                  ref={pageElement}
+                  id='page-0'
+                  className='bg-white drop-shadow-lg'
                   style={{
-                    transform: `scale(${zoomLevel})`,
-                    transformOrigin: 'top left',
+                    width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                    height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
+                    margin: `${pageConfig.margin}px`,
                   }}
-                >
-                  <div
-                    ref={pageElement}
-                    id='page-0'
-                    className='bg-white drop-shadow-lg'
-                    style={{
-                      width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
-                      height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
-                      margin: `${pageConfig.margin}px`,
-                    }}
-                  >{' '}
-                  </div>
-                  {/* quill editor */}
+                >{' '}
                 </div>
+                {/* quill editor */}
               </div>
-          }
-        </ScrollArea>
+            </ScrollArea>
+        }
       </div>
     </div>
   );

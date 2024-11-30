@@ -1,5 +1,7 @@
 import { gql, useQuery } from "@apollo/client";
 import { Delta } from "quill/core";
+import { createApolloClient } from "@/providers/apolloClient";
+
 
 export type EventDocumentClientRequestSyncResponse = {
     eventDocumentClientRequestSync: {
@@ -14,7 +16,7 @@ export type EventDocumentClientRequestSyncResponse = {
 }
 
 const EVENTDOCUMENTCLIENTREQUESTSYNC = gql`
-query EventDocumentClientRequestSync ($documentId:String!,$pageIndex:Int! = 0 ) {
+query EventDocumentClientRequestSync ($documentId:String!,$pageIndex:Int!) {
     eventDocumentClientRequestSync(
         documentId: $documentId
         pageIndex: $pageIndex
@@ -30,8 +32,35 @@ query EventDocumentClientRequestSync ($documentId:String!,$pageIndex:Int! = 0 ) 
 }
 `
 
-export const useGetEventDocumentClientRequestSync = (documentId: string, pageIndex: number = 0) => {
+const EVENTDOCUMENTCLIENTREQUESTSYNCCLASS = gql`
+query EventDocumentClientRequestSyncClass ($documentId:String!,$pageIndex:Int!) {
+    eventDocumentClientRequestSync(
+        documentId: $documentId
+        pageIndex: $pageIndex
+    ) {
+        delta
+        documentId
+        eventType
+        pageIndex
+        requestSync
+        senderId
+        totalPage
+    }
+}
+`
+
+export const useGetEventDocumentClientRequestSync = (documentId: string, pageIndex: number) => {
     return useQuery<EventDocumentClientRequestSyncResponse>(EVENTDOCUMENTCLIENTREQUESTSYNC, {
+        variables: {
+            documentId,
+            pageIndex
+        }
+    })
+}
+
+export const useGetEventDocumentClientRequestSyncClass = (sessionId: string, documentId: string, pageIndex: number) => {
+    return createApolloClient(sessionId).query<EventDocumentClientRequestSyncResponse>({
+        query: EVENTDOCUMENTCLIENTREQUESTSYNCCLASS,
         variables: {
             documentId,
             pageIndex

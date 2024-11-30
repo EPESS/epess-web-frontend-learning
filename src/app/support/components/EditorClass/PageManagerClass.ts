@@ -6,6 +6,7 @@ import DeltaQueue from "./DeltaQueue";
 import { useGetEventDocumentServerRequestSync } from "@/app/api/document";
 import { ApolloClient } from "@apollo/client";
 import { toast } from "react-toastify";
+import { useGetEventDocumentClientRequestSyncClass } from "@/app/api/document/eventDocumentClientRequestSync";
 
 export enum EVENT_NAMES {
     TEXT_CHANGE = 'text-change',
@@ -80,11 +81,15 @@ export class DeltaManager {
     }
 }
 
+class QuillWrapper extends Quill {
+    saved: boolean = true
+}
+
 export default class PageManager {
     public config: PageConfiguration;
-    private Quill: typeof Quill;
+    private QuillWrapper: typeof QuillWrapper;
     public _toolbar: Toolbar | undefined;
-    public pages: Quill[] = [];
+    public pages: QuillWrapper[] = [];
     public _currentPageIndex: number = 0;
     public subscription: any;
     public clientHTTP: ApolloClient<any>;
@@ -124,8 +129,8 @@ export default class PageManager {
         })) {
 
             if (result?.data?.document && (result?.data?.document.senderId !== this.userId)) {
-                // this.pages[result?.data?.document?.pageIndex].updateContents(JSON.parse(result.data?.document.delta), Quill.sources.SILENT);
-                this.applyDelta(JSON.parse(result.data?.document.delta), result?.data?.document?.pageIndex, Quill.sources.API);
+                // this.pages[result?.data?.document?.pageIndex].updateContents(JSON.parse(result.data?.document.delta), QuillWrapper.sources.SILENT);
+                this.applyDelta(JSON.parse(result.data?.document.delta), result?.data?.document?.pageIndex, QuillWrapper.sources.API);
             }
 
             if (result?.data?.document?.requestSync) {
@@ -139,23 +144,23 @@ export default class PageManager {
         }
     }
 
-    constructor(sessionId: string, userId: string, docID: string, quill: Quill, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
+    constructor(sessionId: string, userId: string, docID: string, quill: QuillWrapper, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
         // initialize config
         this.sessionId = sessionId
         this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
-        this.Quill = Quill; // Quill class
+        this.QuillWrapper = QuillWrapper; // QuillWrapper class
         this.pushToPageList(quill);
         this.clientHTTP = clientHTTP;
         this.clientWS = clientWS;
         this.userId = userId
         this.deltaQueue = deltaQueue;
         this.documentId = docID
-
+        this.registerEventListener()
         this.subscribeDocument(docID)
         // this.deltaManager = new DeltaManager(quill.getContents());
     }
     static newQuill(container: HTMLElement) {
-        return new Quill(container, {
+        return new QuillWrapper(container, {
             modules: {
                 toolbar: false,
             },
@@ -164,7 +169,7 @@ export default class PageManager {
         });
     }
     registerGlobalModule(module: any) {
-        this.Quill.register(module, true);
+        this.QuillWrapper.register(module, true);
     }
 
     registerPageModule(module: any) {
@@ -180,7 +185,7 @@ export default class PageManager {
     // newPage return page reference
     newPage(container: HTMLElement) {
         // create new quill instance using registry and push to pages array
-        const newPage = new this.Quill(container, {
+        const newPage = new this.QuillWrapper(container, {
             modules: {
                 toolbar: false,
             },
@@ -210,6 +215,68 @@ export default class PageManager {
         this.pushToPageList(newQuill);
         return newQuill;
     }
+
+    newJSXPageWithData(document: Document, data: Delta) {
+        // padding size
+        const { width, height } = PAGE_SIZES[this.config.pageSize];
+        const newPage = document.createElement('div');
+        newPage.id = `page-${this.pages.length}`;
+        newPage.style.width = `${width}mm`;
+        newPage.style.height = `${height}mm`;
+        newPage.style.margin = `${this.config.margin}px`;
+        newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
+        // append new page to document after last page
+        this.getLastPage().container.after(newPage);
+        // create new quill instance and push to page list
+        const newQuill = PageManager.newQuill(newPage);
+        newQuill.setContents(data)
+        this.pushToPageList(newQuill);
+        return newQuill;
+    }
+
+    registerEventListener() {
+        let updateLoading = false
+
+        document.addEventListener("keydown", async (e) => {
+            if (!updateLoading && e.ctrlKey && e.key === "s") {
+                e.preventDefault()
+                const listUnsavedPage = this.pages.filter((page) => !page.saved)
+
+                if (listUnsavedPage.length) {
+                    updateLoading = true
+                    let errors: string[] = []
+
+                    try {
+                        await Promise.all(listUnsavedPage.map(async (page) => {
+                            try {
+                                await useGetEventDocumentServerRequestSync(
+                                    this.sessionId,
+                                    JSON.stringify(page.getContents()),
+                                    this.documentId,
+                                    Number(page.container.id.split("-")[1])
+                                )
+                                this.pages[Number(page.container.id.split("-")[1])].saved = true
+                            } catch (err: any) {
+                                // Collect all errors
+                                errors.push(`Error updating page ${page.container.id}: ${err.message}`)
+                            }
+                        }))
+
+                        if (errors.length === 0) {
+                            toast.success("Cập nhật thành công")
+                        } else {
+                            toast.error(`Có lỗi xảy ra: ${errors.join(", ")}`)
+                        }
+                    } catch (error) {
+                        toast.error("Có lỗi xảy ra trong quá trình cập nhật.")
+                    } finally {
+                        updateLoading = false
+                    }
+                }
+            }
+        })
+    }
+
 
     deletePage(index: number): boolean {
         try {
@@ -254,9 +321,12 @@ export default class PageManager {
         return this.newJSXPage(document);
     }
 
-    loadNext() {
-        return this.newJSXPage(document);
+    async loadNextWithData(delta: Delta) {
+        return this.newJSXPageWithData(document, delta);
     }
+    // async loadNextWithData() {
+    //     return this.nextPage();
+    // }
 
     previousPage() {
         if (this.currentPageIndex - 1 >= 0) {
@@ -265,59 +335,32 @@ export default class PageManager {
         return null;
     }
 
-    // example: applyDelta(delta, 0, Quill.sources.USER)
+    // example: applyDelta(delta, 0, QuillWrapper.sources.USER)
     async applyDelta(delta: Delta, pageIndex: number, source?: EmitterSource) {
         if (!source) {
-            source = Quill.sources.SILENT;
+            source = QuillWrapper.sources.SILENT;
         }
         this.pages[pageIndex].updateContents(delta, source);
     }
 
     async setDelta(delta: Delta, pageIndex: number, source?: EmitterSource) {
         if (!source) {
-            source = Quill.sources.SILENT;
+            source = QuillWrapper.sources.SILENT;
         }
         this.pages[pageIndex].setContents(delta, source);
     }
 
-    pushToPageList(page: Quill) {
+    pushToPageList(page: QuillWrapper) {
         let tooltip = document.createElement('div');
-        let updateLoading = false
 
         // pre push section
         // register event listener
-        document.addEventListener("keydown", async (e) => {
-
-            if (e.key === "Backspace" || e.key === "Delete") {
-                tooltip.style.display = 'none'; // Ban đầu ẩn đi
-                return;
-            }
-
-            if (!updateLoading && e.ctrlKey && e.key === "s") {
-                e.preventDefault()
-                const delta = this.gotoPage(this.currentPageIndex).getContents()
-                updateLoading = true
-                if (delta) {
-                    const dataUseGetEventDocumentServerRequestSync = await useGetEventDocumentServerRequestSync(this.sessionId, JSON.stringify(delta), this.documentId, this.currentPageIndex)
-                    if (dataUseGetEventDocumentServerRequestSync.data) {
-                        toast.success("Cập nhật thành công")
-                        updateLoading = false
-                    } else {
-                        toast.error("Cập nhật thất bại")
-                        updateLoading = false
-                    }
-                }
-                return;
-            }
-        })
-
-
 
         page.on(EVENT_NAMES.TEXT_CHANGE, (delta, oldDelta, source) => {
-            if (source === Quill.sources.SILENT) {
+            if (source === QuillWrapper.sources.SILENT) {
                 return;
             }
-            if (source === Quill.sources.API) {
+            if (source === QuillWrapper.sources.API) {
                 return;
             }
             if (!(delta instanceof Delta)) {
@@ -328,6 +371,8 @@ export default class PageManager {
                 console.log(page.container.id);
                 this.deletePage(this.pages.indexOf(page));
             }
+
+            page.saved = false
 
             this.deltaQueue.push({
                 delta: delta,
@@ -401,7 +446,7 @@ export default class PageManager {
         this.pages.push(page);
     }
 
-    trimOverflowingContent(page: Quill) {
+    trimOverflowingContent(page: QuillWrapper) {
         // calculate overflow content in delta, delete overflow content and apply delta to next page
         const overflowContent = page.getContents();
         let contentHeight = 0;
@@ -427,21 +472,21 @@ export default class PageManager {
             page.deleteText(
                 deleteIndex,
                 overflowContent.length() - deleteIndex,
-                Quill.sources.SILENT
+                QuillWrapper.sources.SILENT
             );
             // apply overflow delta to next page
-            this.nextPage().updateContents(overflowDelta, Quill.sources.SILENT);
+            this.nextPage().updateContents(overflowDelta, QuillWrapper.sources.USER);
             // this.moveCursorToNextPage();
         }
     }
 
     // neverfix
-    // handleUnderflowContent(page: Quill) {
+    // handleUnderflowContent(page: QuillWrapper) {
     //   // handle underflow content in page
     //   const underflowContent = page.getContents();
     //   const underflowDelta = underflowContent.slice(0, 1);
-    //   page.deleteText(0, 1, Quill.sources.SILENT);
-    //   this.previousPage()?.updateContents(underflowDelta, Quill.sources.SILENT);
+    //   page.deleteText(0, 1, QuillWrapper.sources.SILENT);
+    //   this.previousPage()?.updateContents(underflowDelta, QuillWrapper.sources.SILENT);
     // }
 
     moveCursorToNextPage() {
@@ -465,10 +510,10 @@ export default class PageManager {
     }
 
     formatSelected(format: string, params: string) {
-        this.getCurrentPage().format(format, params, Quill.sources.USER);
+        this.getCurrentPage().format(format, params, QuillWrapper.sources.USER);
     }
 
-    static isPageOverflowing(page: Quill) {
+    static isPageOverflowing(page: QuillWrapper) {
         return page.root.scrollHeight > page.root.clientHeight;
     }
 }

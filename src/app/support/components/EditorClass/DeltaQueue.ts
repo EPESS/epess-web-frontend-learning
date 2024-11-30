@@ -41,7 +41,7 @@ export default class DeltaQueue {
                 }
             });
         }
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
         await this.emit();
     }
 
