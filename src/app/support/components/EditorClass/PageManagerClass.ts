@@ -6,7 +6,6 @@ import DeltaQueue from "./DeltaQueue";
 import { useGetEventDocumentServerRequestSync } from "@/app/api/document";
 import { ApolloClient } from "@apollo/client";
 import { toast } from "react-toastify";
-import { useGetEventDocumentClientRequestSyncClass } from "@/app/api/document/eventDocumentClientRequestSync";
 
 export enum EVENT_NAMES {
     TEXT_CHANGE = 'text-change',
@@ -206,8 +205,9 @@ export default class PageManager {
         newPage.id = `page-${this.pages.length}`;
         newPage.style.width = `${width}mm`;
         newPage.style.height = `${height}mm`;
-        newPage.style.margin = `${this.config.margin}px`;
-        newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
+        newPage.style.marginTop = `${this.config.margin}px`;
+        newPage.style.marginBottom = `${this.config.margin}px`;
+        newPage.className = 'overflow-auto min-h-full !w-full bg-white drop-shadow-lg';
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
@@ -223,8 +223,9 @@ export default class PageManager {
         newPage.id = `page-${this.pages.length}`;
         newPage.style.width = `${width}mm`;
         newPage.style.height = `${height}mm`;
-        newPage.style.margin = `${this.config.margin}px`;
-        newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
+        newPage.style.marginTop = `${this.config.margin}px`;
+        newPage.style.marginBottom = `${this.config.margin}px`;
+        newPage.className = 'overflow-auto !w-full min-h-full bg-white drop-shadow-lg';
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
@@ -499,7 +500,7 @@ export default class PageManager {
     }
 
     attachToolbarToPage(index: number) {
-        if (this.pages[index].options.modules.toolbar) return;
+        // if (this.pages[index].options.modules.toolbar) return;
 
         this.pages[index].options.modules.toolbar = this.toolbar;
     }

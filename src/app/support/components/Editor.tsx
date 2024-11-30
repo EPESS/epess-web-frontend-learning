@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 
@@ -42,15 +42,14 @@ import { useAddCollaborator, useCreateDocument } from '@/app/api/document';
 import DeltaQueue from './EditorClass/DeltaQueue';
 import { GLOBAL_MARGIN, PageConfiguration } from './EditorClass';
 import PageManager, { PAGE_SIZES } from './EditorClass/PageManagerClass';
-import { TCollaborationSessionResponse, useJoinRoomQuery } from '@/app/api/support-room';
+import { TCollaborationSessionResponse } from '@/app/api/support-room';
 import ScaleLoader from 'react-spinners/ScaleLoader';
 import { useUpdateActiveDocumentId } from '@/app/api/document/updateActiveDocument';
 import { toast } from 'react-toastify';
 import { useUpdateDocument } from '@/app/api/document/updateDocument';
 import { TCollaborationSessionUpdated, useGetCollaborationSessionUpdated } from '@/app/api/support-room/collaborationSessionUpdated';
-import { EventDocumentClientRequestSyncResponse, useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDocumentClientRequestSync';
+import { useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDocumentClientRequestSync';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Delta } from 'quill/core';
 
 
 
@@ -557,6 +556,7 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
             data?.collaborationSession.activeDocumentId &&
             <ScrollArea ref={documentRef} key={documentId} className='z-0 flex justify-center pb-10 overflow-y-auto bg-gray-50 px-20 pt-4 h-screen rounded-lg w-full '>
               <div
+                className='w-full'
                 style={{
                   transform: `scale(${zoomLevel})`,
                   transformOrigin: 'top left',
@@ -565,11 +565,12 @@ export default function Editor({ collaborationId, loading, data, handleRefetch }
                 <div
                   ref={pageElement}
                   id='page-0'
-                  className='bg-white drop-shadow-lg'
+                  className='bg-white w-full drop-shadow-lg'
                   style={{
-                    width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                    // width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
                     height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
-                    margin: `${pageConfig.margin}px`,
+                    marginTop: `${pageConfig.margin}px`,
+                    marginBottom: `${pageConfig.margin}px`,
                   }}
                 >{' '}
                 </div>
