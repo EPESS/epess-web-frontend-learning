@@ -36,7 +36,7 @@ export enum EJoinRoomErrorCode {
     CollaborationNotTime = "Collaboration session not allowed in this time"
 }
 
-const JOINROOM = gql`
+export const JOINROOM = gql`
 query CollaborationSession ($scheduleDateId: String!) {
     collaborationSession(scheduleDateId: $scheduleDateId) {
         activeDocumentId

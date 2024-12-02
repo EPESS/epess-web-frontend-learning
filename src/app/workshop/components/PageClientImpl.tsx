@@ -130,7 +130,6 @@ export function PageClientImpl(props: {
       <main data-lk-theme='default' style={{ height: '100%' }}>
         {connectionDetails === undefined || preJoinChoices === undefined ? (
           <>
-            <Header />
             <div
               className='bg-login-custom'
               style={{

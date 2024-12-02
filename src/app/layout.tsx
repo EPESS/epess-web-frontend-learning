@@ -7,6 +7,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import type { Metadata, Viewport } from 'next';
 import { ToastContainer } from 'react-toastify';
 import ApolloClientProvider from '@/providers/apolloClient';
+import Header from '@/components/customs/header';
+import LayoutWrapper from '@/components/layout-wrapper';
 
 export const metadata: Metadata = {
   title: 'EPESS',
@@ -28,7 +30,11 @@ export default function RootLayout({
         <html lang='en'>
           <body className='light'>
             <ToastContainer limit={3} />
-            {children}
+            <LayoutWrapper>
+                <div>
+                  {children}
+                </div>
+            </LayoutWrapper>
           </body>
         </html>
       </ApolloClientProvider>

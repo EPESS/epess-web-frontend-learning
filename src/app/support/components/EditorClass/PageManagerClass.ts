@@ -207,7 +207,7 @@ export default class PageManager {
         newPage.style.height = `${height}mm`;
         newPage.style.marginTop = `${this.config.margin}px`;
         newPage.style.marginBottom = `${this.config.margin}px`;
-        newPage.className = 'overflow-auto min-h-full !w-full bg-white drop-shadow-lg';
+        newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
@@ -225,7 +225,7 @@ export default class PageManager {
         newPage.style.height = `${height}mm`;
         newPage.style.marginTop = `${this.config.margin}px`;
         newPage.style.marginBottom = `${this.config.margin}px`;
-        newPage.className = 'overflow-auto !w-full min-h-full bg-white drop-shadow-lg';
+        newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
@@ -500,9 +500,10 @@ export default class PageManager {
     }
 
     attachToolbarToPage(index: number) {
-        // if (this.pages[index].options.modules.toolbar) return;
+        if (this.pages[index].options.modules.toolbar) {
+            this.pages[index].options.modules.toolbar = this.toolbar;
+        }
 
-        this.pages[index].options.modules.toolbar = this.toolbar;
     }
 
     focusToPage(index: number) {

@@ -12,11 +12,12 @@ import { useStore } from '@/hooks/use-store';
 import dynamic from 'next/dynamic';
 import ChatDetail from '@/components/customs/chat/chat-detail';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useJoinRoomQuery } from '../api/support-room';
+import { JOINROOM, useJoinRoomQuery } from '../api/support-room';
 import { useGetMeetingRoom } from '../api/meeting-room';
 import { toast } from 'react-toastify';
-import { useGetCollaborationSessionUpdated } from '../api/support-room/collaborationSessionUpdated';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { TCollaborationSessionUpdated, useGetCollaborationSessionUpdated } from '../api/support-room/collaborationSessionUpdated';
+import { useAuth } from '@clerk/nextjs';
+import { useAddCollaborator, useCreateDocument, useUpdateActiveDocumentId } from '../api/document';
 
 const Editor = dynamic(() => import("../support/components/Editor"))
 
@@ -31,7 +32,6 @@ export default function Component({
   const params = useSearchParams()
 
   const router = useRouter()
-
 
   const scheduleDateIdParam = params.get("scheduleDateId") ?? ''
 
@@ -48,24 +48,103 @@ export default function Component({
 
   const { toggleMeetingAndChat } = useToggleMeetingAndChat();
 
-  const { user: userClerk } = useUser()
-
   const { user, userLoading } = useMe();
 
-  const { loading: roomLoading, data, refetch } = useJoinRoomQuery(scheduleDateIdParam)
+  const { userId, sessionId } = useAuth();
+
+  const { loading: roomLoading, data: dataCollaboration } = useJoinRoomQuery(scheduleDateIdParam)
 
   const [joinMeetingRoom, { loading: meetingRoomLoading, data: meeting }] = useGetMeetingRoom(scheduleDateIdParam)
 
+  const [updateActiveDocument, { loading: loadingUpdateActiveDocument }] = useUpdateActiveDocumentId()
+
+  const [addCollaborator, { loading: loadingAddCollaborator }] = useAddCollaborator()
+
+  const [createDocument, { loading: loadingNewFile }] = useCreateDocument(dataCollaboration?.collaborationSession.id ?? "")
+
   const meetingCollaborationSession = meeting?.meetingRoom
 
-  const collaborationSession = data?.collaborationSession
+  const collaborationSession = dataCollaboration?.collaborationSession
 
   React.useEffect(() => {
-    if (!data && !roomLoading && !collaborationSession?.collaboratorsIds.includes(user?.id ?? "")) {
+    if (!dataCollaboration && !roomLoading && !collaborationSession?.collaboratorsIds.includes(user?.id ?? "")) {
       router.push(LEARNING_URL)
       toast.warning("Lớp học không tồn tại vui lòng liên hệ lại giảng viên !")
     }
   }, [roomLoading])
+
+  const handleNewFile = async () => {
+    if (loadingNewFile) return;
+    if (loadingUpdateActiveDocument) return;
+    const dataCreateDocument = await createDocument({
+      onCompleted: (data) => {
+        // setDocumentId(data.createDocument.id)
+        updateActiveDocument({
+          variables: {
+            activeDocumentId: data.createDocument.id,
+            collaborationSessionId: dataCollaboration?.collaborationSession.id ?? ""
+          },
+          awaitRefetchQueries: true,
+          refetchQueries: [{ query: JOINROOM, variables: { scheduleDateId: scheduleDateIdParam } }],
+          onCompleted: () => {
+            toast.success("Tạo file thành công")
+          },
+          onError: (error) => {
+            toast.error(error.message)
+          },
+        }
+        )
+      }
+    })
+
+    if (dataCollaboration?.collaborationSession?.collaboratorsIds?.length === 2) {
+      dataCollaboration?.collaborationSession.collaboratorsIds.map((id: string) => {
+        if (dataCreateDocument.data?.createDocument) {
+          addCollaborator({
+            variables: {
+              documentId: dataCreateDocument.data.createDocument.id,
+              userId: id
+            },
+            onError() {
+              toast.error(`Không thể thêm ${userId === id ? "bạn" : "giảng viên"} vào tài liệu`)
+            },
+          })
+        }
+      })
+    }
+  }
+
+  const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
+    console.log("hahahahaha", data.collaborationSessionUpdated);
+  }
+
+  const handleFileEvent = (value: string) => {
+    switch (value) {
+      case "new": {
+        handleNewFile()
+        break;
+      }
+      case "open": {
+
+        break;
+      }
+      case "save": {
+
+        break;
+      }
+      case "export": {
+
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
+  React.useEffect(() => {
+    useGetCollaborationSessionUpdated(sessionId, dataCollaboration?.collaborationSession.id, handleNewFileSubscription)
+  }, []);
 
   if (userLoading || roomLoading || !user) {
     return <Loading />;
@@ -83,7 +162,8 @@ export default function Component({
             : 'calc(24 / 25 * 100%)',
         }}
       >
-        <Editor handleRefetch={refetch} data={data} loading={roomLoading} collaborationId={collaborationSession?.id ?? ''} />
+        {/* <ToolbarHeader documentId={dataCollaboration?.collaborationSession.activeDocumentId ?? ""}  /> */}
+        <Editor handleFileEvent={handleFileEvent} key={dataCollaboration?.collaborationSession.activeDocumentId} documentId={dataCollaboration?.collaborationSession.activeDocumentId ?? ""} />
       </div>
 
       {/* Slice 2 with dynamic width */}

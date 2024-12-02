@@ -1,20 +1,36 @@
 import { gql, useMutation } from "@apollo/client";
 
+export type TDocument = {
+    createdAt: Date;
+    fileUrl: string;
+    id: string;
+    isPublic: boolean;
+    name: string;
+    ownerId: string;
+    updatedAt: Date;
+}
+
 type CreateDocumentInput = {
     collaborationSessionId: string;
 };
 
 type CreateDocumentResponse = {
-    createDocument: {
-        createdAt: string;
-        fileUrl: string;
-        id: string;
-        isPublic: boolean;
-        name: string;
-        ownerId: string;
-        updatedAt: string;
-    };
+    createDocument: TDocument
 };
+
+const CREATESELFDOCUMENT = gql`
+mutation CreateDocument  {
+    createDocument{
+        createdAt
+        fileUrl
+        id
+        isPublic
+        name
+        ownerId
+        updatedAt
+    }
+}
+`
 
 const CREATEDOCUMENT = gql`
 mutation CreateDocument ($collaborationSessionId: String) {
@@ -32,6 +48,10 @@ mutation CreateDocument ($collaborationSessionId: String) {
 
 export const useCreateDocument = (collaborationSessionId: string) => {
     return useMutation<CreateDocumentResponse, CreateDocumentInput>(CREATEDOCUMENT, {
-        variables: { collaborationSessionId }
+        variables: { collaborationSessionId },
     })
+}
+
+export const useCreateSelfDocument = () => {
+    return useMutation<CreateDocumentResponse>(CREATESELFDOCUMENT)
 }
