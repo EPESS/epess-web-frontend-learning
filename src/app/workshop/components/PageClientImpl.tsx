@@ -126,7 +126,7 @@ export function PageClientImpl(props: {
 
   return (
     <LayoutContextProvider>
-      <main data-lk-theme='default' style={{ height: '100%' }}>
+      <main data-lk-theme='default' style={{ height: '100vh' }}>
         {connectionDetails === undefined || preJoinChoices === undefined ? (
           <>
             <div
