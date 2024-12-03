@@ -84,7 +84,7 @@ const ToolbarHeader = ({ documentId, handleEvent }: TToolbarHeader) => {
                             Help
                         </Button>
 
-                        {data?.document.collaborators.filter((collaborator) => collaborator.user.id === user?.id)[0].writable
+                        {data?.document.collaborators.filter((collaborator) => collaborator.user.id === user?.id)[0]?.writable
                             ?
                             <Badge variant={"destructive"}>
                                 <Edit className='w-3 h-3' />
