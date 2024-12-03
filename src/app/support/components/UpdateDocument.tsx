@@ -32,6 +32,16 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
         setShowListEmail(false)
     })
 
+    const errorMappingLabel = (msg: string) => {
+        switch (msg) {
+            case "User is not owner of document":
+                return "Bạn không có quyền chỉnh sửa tài liệu này"
+
+            default:
+                return "Lỗi vui lòng liên hệ nền tảng chúng tôi"
+        }
+    }
+
     const handleAddUserToDocument = (userId: string) => {
         if (loadingAddCollaborator || loadingRemoveCollaborator) return
 
@@ -45,8 +55,8 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
             onCompleted: () => {
                 toast.success("Thêm thành viên thành công !")
             },
-            onError: () => {
-                toast.error("Lỗi thêm thành viên")
+            onError: (error) => {
+                toast.error(`Lỗi thêm thành viên. Lý do: ${errorMappingLabel(error.message)}`)
             }
 
         })
@@ -66,8 +76,8 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
             onCompleted: () => {
                 toast.success("Xoá thành viên thành công !")
             },
-            onError: () => {
-                toast.error("Lỗi xoá thành viên")
+            onError: (error) => {
+                toast.error(`Lỗi xoá thành viên. Lý do: ${errorMappingLabel(error.message)}`)
             }
         })
     }
@@ -92,7 +102,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                 {
                                     showListEmail ?
                                         loadingUsers ? <ScaleLoader /> : dataUsers?.users.map((user) => (
-                                            <div key={user.id} className='flex cursor-pointer hover:bg-gray-200/50 justify-between items-center border border-gray-400/50 p-2'>
+                                            <div onClick={() => handleAddUserToDocument(user.id)} key={user.id} className='flex cursor-pointer hover:bg-gray-200/50 justify-between items-center border border-gray-400/50 p-2'>
                                                 <div className='flex items-center gap-3'>
                                                     <div className='rounded-[50%] w-4 h-4'>
                                                         <img src={user.avatarUrl} alt={`Image-${user.id}`} />
@@ -100,7 +110,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                                     <span className='text-[15px] font-semibold text-black'>{user.email}</span>
                                                 </div>
                                                 <div className='flex gap-1' >
-                                                    <Plus onClick={() => handleAddUserToDocument(user.id)} className='w-5 h-5' />
+                                                    <Plus className='w-5 h-5' />
                                                 </div>
                                             </div>
                                         )) : <></>

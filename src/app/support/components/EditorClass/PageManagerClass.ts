@@ -97,6 +97,9 @@ export default class PageManager {
     public documentId: string = ""
     public userId: string = ""
     public sessionId: string = ""
+    public isReadOnly: boolean = false
+
+    
 
     get currentPageIndex() {
 
@@ -143,8 +146,9 @@ export default class PageManager {
         }
     }
 
-    constructor(sessionId: string, userId: string, docID: string, quill: QuillWrapper, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
+    constructor(isReadOnly: boolean, sessionId: string, userId: string, docID: string, quill: QuillWrapper, clientHTTP: ApolloClient<any>, clientWS: Client, deltaQueue: DeltaQueue) {
         // initialize config
+        this.isReadOnly = isReadOnly
         this.sessionId = sessionId
         this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
         this.QuillWrapper = QuillWrapper; // QuillWrapper class
@@ -158,8 +162,9 @@ export default class PageManager {
         this.subscribeDocument(docID)
         // this.deltaManager = new DeltaManager(quill.getContents());
     }
-    static newQuill(container: HTMLElement) {
+    static newQuill(container: HTMLElement, isReadOnly: boolean,) {
         return new QuillWrapper(container, {
+            readOnly: isReadOnly,
             modules: {
                 toolbar: false,
             },
@@ -211,7 +216,7 @@ export default class PageManager {
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
-        const newQuill = PageManager.newQuill(newPage);
+        const newQuill = PageManager.newQuill(newPage,this.isReadOnly);
         this.pushToPageList(newQuill);
         return newQuill;
     }
@@ -229,7 +234,7 @@ export default class PageManager {
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
-        const newQuill = PageManager.newQuill(newPage);
+        const newQuill = PageManager.newQuill(newPage, this.isReadOnly);
         newQuill.setContents(data)
         this.pushToPageList(newQuill);
         return newQuill;
@@ -382,7 +387,7 @@ export default class PageManager {
             });
 
         });
-        
+
         page.on(EVENT_NAMES.EDITOR_CHANGE, () => {
 
             // Check if the current page is overflowing
@@ -503,8 +508,8 @@ export default class PageManager {
     }
 
     // focusToPage(index: number) {
-        // attach toolbar to current page
-        // this.getCurrentPage().getModule('toolbar').attach(this.pages[index]);
+    // attach toolbar to current page
+    // this.getCurrentPage().getModule('toolbar').attach(this.pages[index]);
     // }
 
     formatSelected(format: string, params: string) {

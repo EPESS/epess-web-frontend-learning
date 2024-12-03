@@ -42,6 +42,7 @@ import ScaleLoader from 'react-spinners/ScaleLoader';
 import { useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDocumentClientRequestSync';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ToolbarHeader from '@/components/customs/toolbar-header';
+import { useGetDocument } from '@/app/api/document';
 
 
 
@@ -78,6 +79,8 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
   const [page, setPage] = useState(0)
 
+
+
   const { data: documentData, loading: documentLoading, fetchMore } = useGetEventDocumentClientRequestSync(documentId, page)
 
   // const [paddingSize, setPaddingSize] = useState('10');
@@ -93,6 +96,13 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
   const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
   const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
+
+  const { loading, data } = useGetDocument(documentId)
+
+  const isReadOnly = data?.document.collaborators.filter((collaborator) => collaborator.user.id === userId)[0]?.writable ? false : true
+
+  console.log("permission", isReadOnly);
+
 
   const deltaQueue = new DeltaQueue(clientHTTP);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
@@ -142,18 +152,19 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
     if (!pageElement.current) return; // Nếu pageElement chưa có sẵn thì không khởi tạo
 
     // Kiểm tra nếu newPageManagerRef chưa được khởi tạo
-    if (!newPageManagerRef.current) {
+    if (!loading && !newPageManagerRef.current) {
       newPageManagerRef.current = new PageManager(
+        isReadOnly,
         sessionId ?? "",
         userId ?? "",
         documentId ?? "",
-        PageManager.newQuill(pageElement.current),
+        PageManager.newQuill(pageElement.current, isReadOnly),
         clientHTTP,
         clientWS,
         deltaQueue
       );
     }
-  }, [pageElement, sessionId, userId, documentId, clientHTTP, clientWS, deltaQueue]);
+  }, [pageElement, sessionId, userId, documentId, clientHTTP, clientWS, deltaQueue, isReadOnly]);
 
 
   useEffect(() => {

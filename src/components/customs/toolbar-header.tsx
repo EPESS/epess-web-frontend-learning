@@ -23,6 +23,8 @@ const ToolbarHeader = ({ documentId, handleEvent }: TToolbarHeader) => {
 
     const [updateDocument, { loading: loadingUpdateDocument }] = useUpdateDocument()
 
+    const permission = data?.document.collaborators.filter((collaborator) => collaborator.user.id === user?.id)
+
     const handleChangeName = (title: string) => {
         if (title === data?.document.name) return;
         if (loadingUpdateDocument) return;
@@ -52,8 +54,7 @@ const ToolbarHeader = ({ documentId, handleEvent }: TToolbarHeader) => {
                     <div className='flex items-center justify-center mt-1 gap-5'>
                         <div className='flex gap-5 items-center'>
                             <div className='flex items-end gap-2'>
-                                <Input onBlur={(e) => handleChangeName(e.target.value)} type='text' defaultValue={data?.document.name} placeholder='Untitled' />
-                                <span className='font-bold text-[18px] -mt-1'>.docx</span>
+                                <Input className='border-black' onBlur={(e) => handleChangeName(e.target.value)} type='text' defaultValue={data?.document.name} placeholder='Untitled' />
                             </div>
                             <div>
                                 <UpdateDocumentDialog documentId={documentId} />
@@ -84,7 +85,7 @@ const ToolbarHeader = ({ documentId, handleEvent }: TToolbarHeader) => {
                             Help
                         </Button>
 
-                        {data?.document.collaborators.filter((collaborator) => collaborator.user.id === user?.id)[0]?.writable
+                        {permission && permission[0]?.writable
                             ?
                             <Badge variant={"destructive"}>
                                 <Edit className='w-3 h-3' />
