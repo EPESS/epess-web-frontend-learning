@@ -99,10 +99,10 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                 </DialogHeader>
                 <DialogDescription>
                     <span>Chỉ có chủ sở hữu mới được chỉnh sửa !</span>
-                    {data && user?.id === data.document.ownerId && <p className='text-red-400'>Bạn có thể chỉnh sửa</p>}
+                    {data && user?.id === data.document?.ownerId && <p className='text-red-400'>Bạn có thể chỉnh sửa</p>}
                 </DialogDescription>
                 {
-                    data && user?.id === data.document.ownerId &&
+                    data && user?.id === data.document?.ownerId &&
                     <div className='flex gap-1 items-center'>
                         <div className='relative w-full'>
                             <Input onClick={() => setShowListEmail(true)} ref={inputRef} onChange={(e) => setEmail(e.target.value)} className='w-full' />
@@ -136,7 +136,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                         :
                         <div className="flex flex-col gap-1">
                             <h1 className='font-bold text-[15px]'>Thành viên</h1>
-                            {data?.document.collaborators.map((document) => (
+                            {data?.document?.collaborators?.map((document) => (
                                 <div key={document.documentId} className='flex justify-between items-center border border-gray-400/50 p-2'>
                                     <div className='flex items-center gap-3'>
                                         <div className='rounded-[50%] w-4 h-4'>
@@ -165,7 +165,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                                     <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>}
                                             />
                                         }
-                                        {user?.id === data.document.ownerId &&
+                                        {user?.id === data.document?.ownerId &&
                                             <X onClick={() => removeUserToDocument(document.user.id)} className='cursor-pointer w-5 h-5' />
                                         }
                                     </div>

@@ -54,7 +54,8 @@ export const useGetEventDocumentClientRequestSync = (documentId: string, pageInd
         variables: {
             documentId,
             pageIndex
-        }
+        },
+        skip: !documentId
     })
 }
 

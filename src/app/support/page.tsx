@@ -99,21 +99,18 @@ export default function Component({
       }
     })
 
-    if (dataCollaboration?.collaborationSession?.collaboratorsIds?.length === 2) {
-      dataCollaboration?.collaborationSession.collaboratorsIds.map((id: string) => {
-        if (dataCreateDocument.data?.createDocument) {
-          addCollaborator({
-            variables: {
-              documentId: dataCreateDocument.data.createDocument.id,
-              userId: id
-            },
-            onError() {
-              toast.error(`Không thể thêm ${userId === id ? "bạn" : "giảng viên"} vào tài liệu`)
-            },
-          })
-        }
+    if (dataCreateDocument.data?.createDocument) {
+      addCollaborator({
+        variables: {
+          documentId: dataCreateDocument.data.createDocument.id,
+          userId: userId ?? ""
+        },
+        onError() {
+          toast.error(`Không thể thêm bạn vào tài liệu`)
+        },
       })
     }
+
   }
 
   const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {

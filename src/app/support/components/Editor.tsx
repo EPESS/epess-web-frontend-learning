@@ -75,13 +75,21 @@ type TEditor = {
   handleFileEvent: (event: string) => void
 }
 
+// const isRenderFirstTime 
+
 export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
   const [page, setPage] = useState(0)
 
-
-
   const { data: documentData, loading: documentLoading, fetchMore } = useGetEventDocumentClientRequestSync(documentId, page)
+
+  const [renderOneTime, setRenderOneTime] = useState(false)
+
+  useEffect(() => {
+    if (documentData) {
+      setRenderOneTime(true)
+    }
+  }, [documentData])
 
   // const [paddingSize, setPaddingSize] = useState('10');
   // const [zoomLevel, setZoomLevel] = useState(1);
@@ -99,7 +107,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
   const { loading, data } = useGetDocument(documentId)
 
-  const isReadOnly = data?.document.collaborators.filter((collaborator) => collaborator.user.id === userId)[0]?.writable ? false : true
+  const isReadOnly = data?.document?.collaborators?.filter((collaborator) => collaborator.user.id === userId)[0]?.writable ? false : true
 
   const deltaQueue = new DeltaQueue(clientHTTP);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
@@ -111,7 +119,6 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
   }
 
   const handleScroll = async () => {
-
     if (newPageManagerRef && documentRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = documentRef.current;
 
@@ -165,12 +172,14 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
 
   useEffect(() => {
+    if (!documentData) return;
     if (!newPageManagerRef.current) return;
     if (!pageElement) return;
 
     if (documentLoading) {
       return;
     }
+
 
     if (documentData && page === 0) {
       newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), page, 'silent')
@@ -181,7 +190,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
       newPageManagerRef.current.attachToolbarToPage(page);
     }
 
-  }, [documentData]);
+  }, [renderOneTime, documentData]);
 
 
   useEffect(() => {
@@ -379,37 +388,41 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
         </div>
 
         {/* maintain min height equal to page size * 1.5 */}
-        <ScrollArea ref={documentRef} key={documentId} className='z-0 flex justify-center pb-10 overflow-y-auto bg-gray-50 px-20 pt-4 h-screen rounded-lg w-full '>
-          <div
-            className='w-full'
-            style={{
-              transform: `scale(${1})`,
-              transformOrigin: 'top left',
-            }}
-          >
-            {
-              documentLoading &&
-              <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-                <ScaleLoader />
+        {documentRef &&
+          <ScrollArea ref={documentRef} key={documentId} className='z-0 flex justify-center pb-10 overflow-y-auto bg-gray-50 px-20 pt-4 h-screen rounded-lg w-full '>
+            {renderOneTime &&
+              <div
+                className='w-full'
+                style={{
+                  transform: `scale(${1})`,
+                  transformOrigin: 'top left',
+                }}
+              >
+                {
+                  documentLoading &&
+                  <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                    <ScaleLoader />
+                  </div>
+                }
+                <div
+                  ref={pageElement}
+                  id='page-0'
+                  className='bg-white w-full drop-shadow-lg'
+                  style={{
+                    width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                    height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
+                    marginTop: `${pageConfig.margin}px`,
+                    marginBottom: `${pageConfig.margin}px`,
+                  }}
+                >{' '}
+                </div>
+
+
+                {/* quill editor */}
               </div>
             }
-            <div
-              ref={pageElement}
-              id='page-0'
-              className='bg-white w-full drop-shadow-lg'
-              style={{
-                width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
-                height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
-                marginTop: `${pageConfig.margin}px`,
-                marginBottom: `${pageConfig.margin}px`,
-              }}
-            >{' '}
-            </div>
-
-
-            {/* quill editor */}
-          </div>
-        </ScrollArea>
+          </ScrollArea>
+        }
       </div>
     </div>
   );
