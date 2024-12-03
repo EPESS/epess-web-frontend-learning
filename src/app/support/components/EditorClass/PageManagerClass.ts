@@ -99,7 +99,7 @@ export default class PageManager {
     public sessionId: string = ""
     public isReadOnly: boolean = false
 
-    
+
 
     get currentPageIndex() {
 
@@ -216,7 +216,7 @@ export default class PageManager {
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
-        const newQuill = PageManager.newQuill(newPage,this.isReadOnly);
+        const newQuill = PageManager.newQuill(newPage, this.isReadOnly);
         this.pushToPageList(newQuill);
         return newQuill;
     }
@@ -501,10 +501,9 @@ export default class PageManager {
     }
 
     attachToolbarToPage(index: number) {
-        if (this.pages[index].options.modules.toolbar) {
-            this.pages[index].options.modules.toolbar = this.toolbar;
-        }
-
+        // if (this.pages[index].options.modules.toolbar) {
+        this.pages[index].options.modules.toolbar = this.toolbar;
+        // }
     }
 
     // focusToPage(index: number) {

@@ -204,13 +204,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
           {/*quilljs toolbar */}
           <div id='toolbar' className='flex justify-center items-center gap-3 bg-gray-100 shadow-2xl mt-1 mb-1 p-1 rounded-3xl w-full'>
-            {/* caption control eg normal, h1, h2, h3, h4, h5, h6  */}
-            <div className='flex flex-col items-center gap-3 h-6'>
-              <Button variant='ghost' className='px-0 h-6 ql-header' value="">
-                <span className='ql-header'>Normal</span>
-              </Button>
 
-            </div>
             {/* select will change padding option of the page have 10, 12, 14, 16, 18, 20, 24, 36, 48 */}
             <div className='flex items-center gap-3 h-6'>
               <Select defaultValue="10">

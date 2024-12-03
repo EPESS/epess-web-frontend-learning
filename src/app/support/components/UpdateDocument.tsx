@@ -54,7 +54,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                 userId: userId
             },
             awaitRefetchQueries: true,
-            refetchQueries: [{ query: DOCUMENT, variables: { documentId } }],
+            refetchQueries: [{ query: DOCUMENT, variables: { id: documentId } }],
             onCompleted: () => {
                 toast.success("Thêm thành viên thành công !")
             },
@@ -75,7 +75,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                 userId: userId
             },
             awaitRefetchQueries: true,
-            refetchQueries: [{ query: DOCUMENT, variables: { documentId } }],
+            refetchQueries: [{ query: DOCUMENT, variables: { id: documentId } }],
             onCompleted: () => {
                 toast.success("Xoá thành viên thành công !")
             },

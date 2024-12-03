@@ -151,9 +151,9 @@ export const ParticipantTile: (
           {children ?? (
             <>
               {isTrackReference(trackReference) &&
-              (trackReference.publication?.kind === 'video' ||
-                trackReference.source === Track.Source.Camera ||
-                trackReference.source === Track.Source.ScreenShare) ? (
+                (trackReference.publication?.kind === 'video' ||
+                  trackReference.source === Track.Source.Camera ||
+                  trackReference.source === Track.Source.ScreenShare) ? (
                 <VideoTrack
                   trackRef={trackReference}
                   onSubscriptionStatusChanged={handleSubscribe}
@@ -177,8 +177,7 @@ export const ParticipantTile: (
                       className='object-cover'
                       src={
                         trackReference.participant.metadata
-                          ? JSON.parse(trackReference.participant.metadata)
-                              .avatarUrl
+                          ? trackReference.participant.metadata
                           : ''
                       }
                       alt='Participant'

@@ -13,11 +13,11 @@ import dynamic from 'next/dynamic';
 import ChatDetail from '@/components/customs/chat/chat-detail';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { JOINROOM, useJoinRoomQuery } from '../api/support-room';
-import { useGetMeetingRoom } from '../api/meeting-room';
 import { toast } from 'react-toastify';
 import { TCollaborationSessionUpdated, useGetCollaborationSessionUpdated } from '../api/support-room/collaborationSessionUpdated';
 import { useAuth } from '@clerk/nextjs';
 import { useAddCollaborator, useCreateDocument, useUpdateActiveDocumentId } from '../api/document';
+import { useGetMeetingRoomJoinInfo } from '../api/connection-details';
 
 const Editor = dynamic(() => import("../support/components/Editor"))
 
@@ -54,7 +54,9 @@ export default function Component({
 
   const { loading: roomLoading, data: dataCollaboration } = useJoinRoomQuery(scheduleDateIdParam)
 
-  const [joinMeetingRoom, { loading: meetingRoomLoading, data: meeting }] = useGetMeetingRoom(scheduleDateIdParam)
+  // const [joinMeetingRoom, { loading: meetingRoomLoading, data: meeting }] = useGetMeetingRoom(scheduleDateIdParam)
+
+  const [getMeetingRoomJoinInfo, { loading: loadingRoomInfo, data: dataRoomInfo }] = useGetMeetingRoomJoinInfo(dataCollaboration?.collaborationSession.id ?? "")
 
   const [updateActiveDocument, { loading: loadingUpdateActiveDocument }] = useUpdateActiveDocumentId()
 
@@ -62,7 +64,7 @@ export default function Component({
 
   const [createDocument, { loading: loadingNewFile }] = useCreateDocument(dataCollaboration?.collaborationSession.id ?? "")
 
-  const meetingCollaborationSession = meeting?.meetingRoom
+  // const meetingCollaborationSession = meeting?.meetingRoom
 
   const collaborationSession = dataCollaboration?.collaborationSession
 
@@ -188,14 +190,22 @@ export default function Component({
           )} />
         </Button>
 
-        <div className={cn('z-30 relative flex-grow drop-shadow-sm pt-2 rounded-lg h-1/3 m-1', !meetingCollaborationSession && "border-black border")} >
+        <div className={cn('z-30 relative flex-grow drop-shadow-sm pt-2 rounded-lg h-1/3 m-1', !dataRoomInfo && "border-black border")} >
           {
-            !meetingCollaborationSession ?
-              <Button onClick={() => joinMeetingRoom()} variant={"outline"} className='absolute border-black top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>Kết nối</Button>
+            !dataRoomInfo ?
+              <Button onClick={() => getMeetingRoomJoinInfo()} variant={"outline"} className='absolute border-black top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>Kết nối</Button>
               :
+              user &&
               <MeetingClientImpl
-                loading={meetingRoomLoading}
-                roomName={meetingCollaborationSession.id}
+                connectionDetail={{
+                  participantAvatar: user.avatarUrl,
+                  participantName: user.name,
+                  participantToken: dataRoomInfo.meetingRoomJoinInfo.token,
+                  roomName: dataRoomInfo.meetingRoomJoinInfo.id,
+                  serverUrl: dataRoomInfo.meetingRoomJoinInfo.serverUrl
+                }}
+                loading={loadingRoomInfo}
+                roomName={dataRoomInfo?.meetingRoomJoinInfo.id ?? "123"}
                 hq={hq}
                 codec={codec}
                 user={user}

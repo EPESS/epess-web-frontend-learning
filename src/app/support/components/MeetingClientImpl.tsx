@@ -29,7 +29,7 @@ import {
   MediaDeviceFailure,
 } from 'livekit-client';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { ParticipantTile } from './ParticipantTile';
 import { ControlBar } from './ControlBar';
@@ -40,7 +40,10 @@ import { useStore } from '@/hooks/use-store';
 import { cn } from '@/lib/utils';
 
 declare const window: Window | undefined;
-const CONN_DETAILS_ENDPOINT = '/api/connection-details';
+
+export type TConnectionDetailsDTO = ConnectionDetails & {
+  participantAvatar: string | null
+}
 
 function MeetingClientImplCpn(props: {
   loading?: boolean;
@@ -48,26 +51,13 @@ function MeetingClientImplCpn(props: {
   hq: boolean; // high quality
   codec: VideoCodec;
   user: User;
+  connectionDetail: TConnectionDetailsDTO
 }) {
   const [preJoinChoices, setPreJoinChoices] = useState<
     LocalUserChoices | undefined
   >(undefined);
 
-  const [connectionDetails, setConnectionDetails] = useState<
-    (ConnectionDetails & { participantAvatar: string }) | undefined
-  >(undefined);
 
-  const handlePreJoinSubmit = useCallback(
-    async (values: LocalUserChoices) => {
-      const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
-      url.searchParams.append('roomName', props.roomName);
-      url.searchParams.append('participantName', values.username);
-      const connectionDetailsResp = await fetch(url.toString());
-      const connectionDetailsData = await connectionDetailsResp.json();
-      setConnectionDetails(connectionDetailsData);
-    },
-    [props.roomName]
-  );
 
   useEffect(() => {
     if (props.user) {
@@ -98,12 +88,6 @@ function MeetingClientImplCpn(props: {
     }
   }, [props.user]);
 
-  useEffect(() => {
-    if (preJoinChoices) {
-      handlePreJoinSubmit(preJoinChoices);
-    }
-  }, [preJoinChoices, handlePreJoinSubmit]);
-
   const [isLoading, setIsLoading] = React.useState(props.loading);
 
   useEffect(() => {
@@ -114,7 +98,7 @@ function MeetingClientImplCpn(props: {
     typeof window === 'undefined' ||
     isLoading ||
     !preJoinChoices ||
-    !connectionDetails
+    !props.connectionDetail
   ) {
     return (
       <div className='flex justify-center items-center bg-zinc-900 w-full h-full'>
@@ -126,7 +110,7 @@ function MeetingClientImplCpn(props: {
   return (
     <main data-lk-theme='default' style={{ height: '100%' }}>
       <VideoConferenceComponent
-        connectionDetails={connectionDetails}
+        connectionDetails={props.connectionDetail}
         userChoices={preJoinChoices}
         options={{ codec: props.codec, hq: props.hq }}
       />
@@ -138,7 +122,7 @@ export const MeetingClientImpl = React.memo(MeetingClientImplCpn);
 
 function VideoConferenceComponent(props: {
   userChoices: LocalUserChoices;
-  connectionDetails: ConnectionDetails & { participantAvatar: string };
+  connectionDetails: ConnectionDetails & { participantAvatar: string | null };
   options: {
     hq: boolean;
     codec: VideoCodec;
@@ -202,8 +186,7 @@ function VideoConferenceComponent(props: {
           (device) => device.kind === 'videoinput'
         );
         toast.error(
-          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
-            hasCamera ? '' : 'camera'
+          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${hasCamera ? '' : 'camera'
           } không tồn tại`,
           {
             theme: 'colored',
