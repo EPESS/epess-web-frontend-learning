@@ -48,7 +48,7 @@ export default function Card({ data, classNameCard, classNameContainer }: TCard)
   }
 
   return (
-    <Link href={`/my-document/${data.id}`} target="_blank" className={cn("max-w-56 cursor-pointer", classNameContainer)}>
+    <Link href={`/document/${data.id}`} target="_blank" className={cn("max-w-56 cursor-pointer", classNameContainer)}>
       <div className={cn("bg-slate-200 shadow-sm border w-56 h-64", classNameCard)}>
         {/* documentImage */}
       </div>

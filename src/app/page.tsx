@@ -58,7 +58,6 @@ export default function Page() {
         if (data) {
           const collaborationSessionId = data.collaborationSession.id
           if (collaborationSessionId) {
-            console.log(123);
             router.push(`${LEARNING_URL}/support?scheduleDateId=${scheduleDateId}`)
             toast.success("Vào phòng thành công")
             setScheduleDateIdErr("")

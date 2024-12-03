@@ -1,10 +1,13 @@
 "use client"
 
-import Editor from '@/app/support/components/Editor'
+import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+
+const Editor = dynamic((() => import("../../support/components/Editor")))
 
 const MyDocumentDetail = () => {
+    const [isWindowRender, setIsWindowRender] = useState(false)
 
     const handleFileEvent = (value: string) => {
         switch (value) {
@@ -34,6 +37,15 @@ const MyDocumentDetail = () => {
     const params = useParams()
 
     const { id } = params
+
+
+    useEffect(() => {
+        setIsWindowRender(true)
+    }, [])
+
+    if (!isWindowRender) {
+        return;
+    }
 
     return (
         <div>

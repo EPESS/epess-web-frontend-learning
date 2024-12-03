@@ -101,9 +101,6 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
   const isReadOnly = data?.document.collaborators.filter((collaborator) => collaborator.user.id === userId)[0]?.writable ? false : true
 
-  console.log("permission", isReadOnly);
-
-
   const deltaQueue = new DeltaQueue(clientHTTP);
   const pageConfig = new PageConfiguration('A4', GLOBAL_MARGIN);
 

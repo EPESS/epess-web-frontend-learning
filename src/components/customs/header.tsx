@@ -21,7 +21,7 @@ export default function Header({ className }: THeader) {
             </h1>
           </Link>
           <div className='flex gap-5'>
-            <Link href={"/my-document"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Document của tôi</Link>
+            <Link href={"/document"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Document của tôi</Link>
             <Link href={"/workshop"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Workshop</Link>
           </div>
         </div>
