@@ -58,7 +58,7 @@ export default function Component({
 
   const [updateActiveDocument, { loading: loadingUpdateActiveDocument }] = useUpdateActiveDocumentId()
 
-  const [addCollaborator, { loading: loadingAddCollaborator }] = useAddCollaborator()
+  const [addCollaborator] = useAddCollaborator()
 
   const [createDocument, { loading: loadingNewFile }] = useCreateDocument(dataCollaboration?.collaborationSession.id ?? "")
 

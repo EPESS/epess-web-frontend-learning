@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import ScaleLoader from 'react-spinners/ScaleLoader';
 import { toast } from 'react-toastify';
 import { LEARNING_URL } from '@/lib/utils';
-import Header from '@/components/customs/header';
 
 export default function Page() {
   const { userLoading } = useMe();

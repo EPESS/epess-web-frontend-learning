@@ -1,0 +1,153 @@
+import React, { useRef, useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { DOCUMENT, useAddCollaborator, useGetDocument, useRemoveCollaborator } from '@/app/api/document'
+import { Plus, X } from 'lucide-react'
+import ScaleLoader from 'react-spinners/ScaleLoader'
+import { Input } from '@/components/ui/input'
+import { useGetUsers } from '@/app/api/users'
+import useClickOutSide from '@/hooks/click-outside'
+import { toast } from 'react-toastify'
+import { DropdownMenuCheckboxes } from '@/components/ui/dropdownMenuCheckboxes'
+
+type TUpdateDocument = {
+    documentId: string
+}
+
+const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    const { loading, data } = useGetDocument(documentId)
+
+    const [email, setEmail] = useState("")
+    const [showListEmail, setShowListEmail] = useState(false)
+
+    const [addCollaborator, { loading: loadingAddCollaborator }] = useAddCollaborator()
+
+    const [removeCollaborator, { loading: loadingRemoveCollaborator }] = useRemoveCollaborator()
+
+    const { loading: loadingUsers, data: dataUsers } = useGetUsers(email)
+
+    useClickOutSide(inputRef, () => {
+        setShowListEmail(false)
+    })
+
+    const handleAddUserToDocument = (userId: string) => {
+        if (loadingAddCollaborator || loadingRemoveCollaborator) return
+
+        addCollaborator({
+            variables: {
+                documentId,
+                userId: userId
+            },
+            awaitRefetchQueries: true,
+            refetchQueries: [{ query: DOCUMENT, variables: { documentId } }],
+            onCompleted: () => {
+                toast.success("Thêm thành viên thành công !")
+            },
+            onError: () => {
+                toast.error("Lỗi thêm thành viên")
+            }
+
+        })
+    }
+
+    const removeUserToDocument = (userId: string) => {
+        if (loadingAddCollaborator || loadingRemoveCollaborator) return
+
+
+        removeCollaborator({
+            variables: {
+                documentId,
+                userId: userId
+            },
+            awaitRefetchQueries: true,
+            refetchQueries: [{ query: DOCUMENT, variables: { documentId } }],
+            onCompleted: () => {
+                toast.success("Xoá thành viên thành công !")
+            },
+            onError: () => {
+                toast.error("Lỗi xoá thành viên")
+            }
+        })
+    }
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button size={"sm"}>
+                    <Plus />
+                    <span>Thêm người</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Cập nhật thành viên</DialogTitle>
+                </DialogHeader>
+                <div className='flex gap-1 items-center'>
+                    <div className='relative w-full'>
+                        <Input onClick={() => setShowListEmail(true)} ref={inputRef} onChange={(e) => setEmail(e.target.value)} className='w-full' />
+                        <div className='bg-white absolute h-auto max-h-52 overflow-y-auto top-12 min-w-[300px] left-0 right-0 rounded-md'>
+                            <div className='flex flex-col gap-1'>
+                                {
+                                    showListEmail ?
+                                        loadingUsers ? <ScaleLoader /> : dataUsers?.users.map((user) => (
+                                            <div key={user.id} className='flex cursor-pointer hover:bg-gray-200/50 justify-between items-center border border-gray-400/50 p-2'>
+                                                <div className='flex items-center gap-3'>
+                                                    <div className='rounded-[50%] w-4 h-4'>
+                                                        <img src={user.avatarUrl} alt={`Image-${user.id}`} />
+                                                    </div>
+                                                    <span className='text-[15px] font-semibold text-black'>{user.email}</span>
+                                                </div>
+                                                <div className='flex gap-1' >
+                                                    <Plus onClick={() => handleAddUserToDocument(user.id)} className='w-5 h-5' />
+                                                </div>
+                                            </div>
+                                        )) : <></>
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                    <Button>Thêm thành viên</Button>
+                </div>
+                {
+                    loading ?
+                        <ScaleLoader />
+                        :
+                        <div className="flex flex-col gap-1">
+                            <h1 className='font-bold text-[15px]'>Thành viên</h1>
+                            {data?.document.collaborators.map((document) => (
+                                <div key={document.documentId} className='flex justify-between items-center border border-gray-400/50 p-2'>
+                                    <div className='flex items-center gap-3'>
+                                        <div className='rounded-[50%] w-4 h-4'>
+                                            <img src={document.user.avatarUrl} alt={`Image-${document.user.id}`} />
+                                        </div>
+                                        <span className='text-[15px] font-semibold text-black'>{document.user.name}</span>
+                                    </div>
+                                    <div className='flex gap-1 items-center' >
+                                        <DropdownMenuCheckboxes
+                                            isOpenAfterClick={false}
+                                            handleOnChange={() => { }}
+                                            defaultValue={document.writable ? "edit" : "readonly"}
+                                            options={[
+                                                { label: "Chỉnh sửa", value: "edit" },
+                                                { label: "Chỉ đọc", value: "readonly" },
+                                            ]}
+                                            buttonLabel={document.writable ?
+                                                <Button size={"sm"} variant={"outline"}>Chỉnh sửa</Button>
+                                                :
+                                                <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>}
+                                        />
+                                        <X onClick={() => removeUserToDocument(document.user.id)} className='w-5 h-5' />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                }
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+export default UpdateDocumentDialog

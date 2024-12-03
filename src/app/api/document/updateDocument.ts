@@ -13,9 +13,9 @@ export type TUpdateDocument = {
 }
 
 const UPDATEDOCUMENT = gql`
-mutation UpdateDocument ($documentId:String!, $name:String, $collaborators: DocumentUpdateCollaboratorsRelationInput) {
+mutation UpdateDocument ($documentId:String!, $name:String) {
     updateDocument(
-        data: { name: $name, collaborators: $collaborators }
+        data: { name: $name }
         documentId: $documentId
     ) {
         createdAt
@@ -32,9 +32,7 @@ mutation UpdateDocument ($documentId:String!, $name:String, $collaborators: Docu
 export type TUseUpdateDocument = {
     documentId: string,
     name?: string | null,
-    collaborators?: {
-        id: string
-    }[] | null
+    userId?: string
 }
 
 export const useUpdateDocument = () => {

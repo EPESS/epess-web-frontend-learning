@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/customs/header';
 import Loading from '@/components/customs/loading';
 import { useMe } from '@/hooks/use-me';
 import { RecordingIndicator } from '@/lib/RecordingIndicator';

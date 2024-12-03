@@ -12,6 +12,7 @@ export function Chat({ ...props }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const ulRef = React.useRef<HTMLUListElement>(null);
 
+  // eslint-disable-next-line
   const [isSending, _setIsSending] = React.useState(false);
 
   const layoutContext = useMaybeLayoutContext();

@@ -237,7 +237,6 @@ export function PreJoin({
   onValidate,
   onSubmit,
   onError,
-  debug,
   joinLabel = 'Tham gia cuộc họp',
   micLabel = 'Microphone',
   camLabel = 'Camera',

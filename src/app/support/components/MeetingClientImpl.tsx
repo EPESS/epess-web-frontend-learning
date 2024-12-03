@@ -292,6 +292,7 @@ export type WidgetState = {
 };
 
 const VideoConference = ({
+  // eslint-disable-next-line
   SettingsComponent,
   className,
   ...props

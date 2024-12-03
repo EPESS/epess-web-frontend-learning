@@ -8,6 +8,7 @@ export type TDocument = {
     name: string;
     ownerId: string;
     updatedAt: Date;
+    collaborators: TCollaborator[]
 }
 
 type CreateDocumentInput = {
@@ -17,6 +18,18 @@ type CreateDocumentInput = {
 type CreateDocumentResponse = {
     createDocument: TDocument
 };
+
+type TCollaborator = {
+    documentId: string,
+    readable: boolean,
+    writable: boolean,
+    user: {
+        avatarUrl: string
+        email: string
+        id: string
+        name: string
+    }
+}
 
 const CREATESELFDOCUMENT = gql`
 mutation CreateDocument  {

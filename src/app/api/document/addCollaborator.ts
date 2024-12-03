@@ -24,6 +24,16 @@ mutation AddCollaborator ($documentId:String!,$readable:Boolean! = true, $userId
     }
 }
 `
+const REMOVECOLLABORATOR = gql`
+mutation RemoveCollaborator ($documentId:String!, $userId:String!) {
+    removeCollaborator(documentId: $documentId, userId: $userId) {
+        documentId
+        readable
+        userId
+        writable
+    }
+}
+`
 
 export type TAddCollaboratorDTO = {
     documentId: string
@@ -32,6 +42,14 @@ export type TAddCollaboratorDTO = {
     writable?: boolean
 }
 
+export type TRemoveCollaboratorDTO = {
+    documentId: string,
+    userId: string
+}
+
 export const useAddCollaborator = () => {
     return useMutation<AddCollaboratorResponse, TAddCollaboratorDTO>(ADDCOLLABORATOR)
+}
+export const useRemoveCollaborator = () => {
+    return useMutation<AddCollaboratorResponse, TRemoveCollaboratorDTO>(REMOVECOLLABORATOR)
 }

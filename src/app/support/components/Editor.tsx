@@ -80,8 +80,8 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
   const { data: documentData, loading: documentLoading, fetchMore } = useGetEventDocumentClientRequestSync(documentId, page)
 
-  const [paddingSize, setPaddingSize] = useState('10');
-  const [zoomLevel, setZoomLevel] = useState(1);
+  // const [paddingSize, setPaddingSize] = useState('10');
+  // const [zoomLevel, setZoomLevel] = useState(1);
   const [headerValue, setHeaderValue] = useState('default');
   const [showHeaders, setShowHeaders] = useState(false);
 
@@ -191,7 +191,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
       {/* editor */}
       <div className='relative flex flex-col w-full h-screen max-h-screen'>
         {/* tool bar */}
-        <div id='toolbar' className='z-10 flex flex-col'>
+        <div id='toolbar' className='flex flex-col'>
           <ToolbarHeader documentId={documentId} handleEvent={handleFileEvent} />
 
           {/*quilljs toolbar */}
@@ -205,7 +205,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
             </div>
             {/* select will change padding option of the page have 10, 12, 14, 16, 18, 20, 24, 36, 48 */}
             <div className='flex items-center gap-3 h-6'>
-              <Select onValueChange={(value) => setPaddingSize(value)} defaultValue="10">
+              <Select defaultValue="10">
                 <SelectTrigger className="h-6">
                   <SelectValue placeholder="Chọn kích thước" />
                 </SelectTrigger>
@@ -381,7 +381,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
           <div
             className='w-full'
             style={{
-              transform: `scale(${zoomLevel})`,
+              transform: `scale(${1})`,
               transformOrigin: 'top left',
             }}
           >

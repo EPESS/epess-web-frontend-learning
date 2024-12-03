@@ -15,6 +15,17 @@ query Document ($id:String) {
         name
         ownerId
         updatedAt
+        collaborators {
+            documentId
+            readable
+            writable
+            user {
+                avatarUrl
+                email
+                id
+                name
+            }
+        }
     }
 }
 `

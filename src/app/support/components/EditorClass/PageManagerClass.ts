@@ -268,7 +268,7 @@ export default class PageManager {
                         } else {
                             toast.error(`Có lỗi xảy ra: ${errors.join(", ")}`)
                         }
-                    } catch (error) {
+                    } catch {
                         toast.error("Có lỗi xảy ra trong quá trình cập nhật.")
                     } finally {
                         updateLoading = false
@@ -382,12 +382,8 @@ export default class PageManager {
             });
 
         });
-        // catch scroll event
-        page.on(EVENT_NAMES.SCROLL_UPDATE, (eventName, ...args) => {
-            // console.log(eventName, args);
-        });
-
-        page.on(EVENT_NAMES.EDITOR_CHANGE, (eventName, ...args) => {
+        
+        page.on(EVENT_NAMES.EDITOR_CHANGE, () => {
 
             // Check if the current page is overflowing
             if (PageManager.isPageOverflowing(page)) {
@@ -506,10 +502,10 @@ export default class PageManager {
 
     }
 
-    focusToPage(index: number) {
+    // focusToPage(index: number) {
         // attach toolbar to current page
         // this.getCurrentPage().getModule('toolbar').attach(this.pages[index]);
-    }
+    // }
 
     formatSelected(format: string, params: string) {
         this.getCurrentPage().format(format, params, QuillWrapper.sources.USER);

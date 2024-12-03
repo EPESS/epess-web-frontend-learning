@@ -3,11 +3,9 @@ import '@/styles/globals.css';
 import '@livekit/components-styles';
 import '@livekit/components-styles/prefabs';
 import 'react-toastify/dist/ReactToastify.css';
-
 import type { Metadata, Viewport } from 'next';
 import { ToastContainer } from 'react-toastify';
 import ApolloClientProvider from '@/providers/apolloClient';
-import Header from '@/components/customs/header';
 import LayoutWrapper from '@/components/layout-wrapper';
 
 export const metadata: Metadata = {

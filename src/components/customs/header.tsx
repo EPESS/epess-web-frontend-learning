@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 interface THeader extends AllHTMLAttributes<HTMLElement> {
-
 }
 
 export default function Header({ className }: THeader) {
