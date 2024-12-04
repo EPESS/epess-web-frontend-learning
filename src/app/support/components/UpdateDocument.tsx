@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { DOCUMENT, useAddCollaborator, useGetDocument, useRemoveCollaborator } from '@/app/api/document'
+import { DOCUMENT, useAddCollaborator, useEditCollaboratorPermission, useGetDocument, useRemoveCollaborator } from '@/app/api/document'
 import { Plus, X } from 'lucide-react'
 import ScaleLoader from 'react-spinners/ScaleLoader'
 import { Input } from '@/components/ui/input'
@@ -26,6 +26,8 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
     const [showListEmail, setShowListEmail] = useState(false)
 
     const [addCollaborator, { loading: loadingAddCollaborator }] = useAddCollaborator()
+
+    const [editCollaborator, { loading: loadingEditCollaborator }] = useEditCollaboratorPermission()
 
     const [removeCollaborator, { loading: loadingRemoveCollaborator }] = useRemoveCollaborator()
 
@@ -83,6 +85,48 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                 toast.error(`Lỗi xoá thành viên. Lý do: ${errorMappingLabel(error.message)}`)
             }
         })
+    }
+
+    const editCollaboratorPermission = (permission: string | undefined, userId: string) => {
+        if (loadingEditCollaborator) return;
+
+        switch (permission) {
+            case "edit":
+                editCollaborator({
+                    variables: {
+                        documentId,
+                        userId,
+                        readable: true,
+                        writable: true
+                    },
+                    awaitRefetchQueries: true,
+                    refetchQueries: [{ query: DOCUMENT, variables: { id: documentId } }],
+                    onCompleted: (data) => {
+                        toast.success(`${data.editCollaboratorPermission.user.name} có quyền chỉnh sửa tài liệu`)
+                    },
+                },
+                )
+                break;
+            case "readonly":
+                editCollaborator({
+                    variables: {
+                        documentId,
+                        userId,
+                        readable: true,
+                        writable: false
+                    },
+                    awaitRefetchQueries: true,
+                    refetchQueries: [{ query: DOCUMENT, variables: { id: documentId } }],
+                    onCompleted: (data) => {
+                        toast.success(`${data.editCollaboratorPermission.user.name} chỉ có quyền đọc tài liệu`)
+                    },
+                })
+                break;
+
+            default:
+                toast("Lỗi thay đổi quyền")
+                break;
+        }
     }
 
     return (
@@ -153,7 +197,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                             :
                                             <DropdownMenuCheckboxes
                                                 isOpenAfterClick={false}
-                                                handleOnChange={() => { }}
+                                                handleOnChange={(value) => editCollaboratorPermission(value?.toString(), document.user.id)}
                                                 defaultValue={document.writable ? "edit" : "readonly"}
                                                 options={[
                                                     { label: "Chỉnh sửa", value: "edit" },

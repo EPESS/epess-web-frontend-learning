@@ -1,10 +1,29 @@
 import { gql, useMutation } from "@apollo/client";
+import { toast } from "react-toastify";
 
-export type AddCollaboratorResponse = {
+export type TAddCollaboratorResponse = {
     addCollaborator: {
         documentId: string;
         readable: boolean;
         userId: string;
+        writable: boolean;
+    };
+}
+
+export type TRemoveCollaboratorResponse = {
+    removeCollaborator: {
+        documentId: string;
+        readable: boolean;
+        userId: string;
+        writable: boolean;
+    };
+}
+
+export type TEditCollaboratorResponse = {
+    editCollaboratorPermission: {
+        documentId: string;
+        readable: boolean;
+        user: User,
         writable: boolean;
     };
 }
@@ -34,6 +53,34 @@ mutation RemoveCollaborator ($documentId:String!, $userId:String!) {
     }
 }
 `
+const EDITCOLLABORATORPERMISSION = gql`
+mutation EditCollaboratorPermission ($documentId:String!,$readable:Boolean!, $userId:String!, $writable: Boolean!)  {
+    editCollaboratorPermission(
+        documentId: $documentId
+        readable: $readable
+        userId: $userId
+        writable: $writable
+    ) {
+        documentId
+        readable
+        user {
+            avatarUrl
+            bankAccountNumber
+            bankBin
+            banned
+            createdAt
+            email
+            id
+            name
+            packageValue
+            phoneNumber
+            role
+            updatedAt
+        }
+        writable
+    }
+}
+`
 
 export type TAddCollaboratorDTO = {
     documentId: string
@@ -47,9 +94,18 @@ export type TRemoveCollaboratorDTO = {
     userId: string
 }
 
+
+export const useEditCollaboratorPermission = () => {
+    return useMutation<TEditCollaboratorResponse, TAddCollaboratorDTO>(EDITCOLLABORATORPERMISSION, {
+        onError: (error) => {
+            toast.error(error.message)
+        }
+    })
+}
+
 export const useAddCollaborator = () => {
-    return useMutation<AddCollaboratorResponse, TAddCollaboratorDTO>(ADDCOLLABORATOR)
+    return useMutation<TAddCollaboratorResponse, TAddCollaboratorDTO>(ADDCOLLABORATOR)
 }
 export const useRemoveCollaborator = () => {
-    return useMutation<AddCollaboratorResponse, TRemoveCollaboratorDTO>(REMOVECOLLABORATOR)
+    return useMutation<TRemoveCollaboratorResponse, TRemoveCollaboratorDTO>(REMOVECOLLABORATOR)
 }

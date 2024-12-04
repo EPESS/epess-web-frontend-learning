@@ -398,26 +398,26 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
                   transformOrigin: 'top left',
                 }}
               >
-                {
-                  documentLoading &&
-                  <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-                    <ScaleLoader />
+                <div className='w-fit m-auto'>
+                  {
+                    documentLoading &&
+                    <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                      <ScaleLoader />
+                    </div>
+                  }
+                  <div
+                    ref={pageElement}
+                    id='page-0'
+                    className='bg-white w-full drop-shadow-lg'
+                    style={{
+                      width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
+                      height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
+                      marginTop: `${pageConfig.margin}px`,
+                      marginBottom: `${pageConfig.margin}px`,
+                    }}
+                  >{' '}
                   </div>
-                }
-                <div
-                  ref={pageElement}
-                  id='page-0'
-                  className='bg-white w-full drop-shadow-lg'
-                  style={{
-                    width: `${PAGE_SIZES[pageConfig.pageSize].width}mm`,
-                    height: `${PAGE_SIZES[pageConfig.pageSize].height}mm`,
-                    marginTop: `${pageConfig.margin}px`,
-                    marginBottom: `${pageConfig.margin}px`,
-                  }}
-                >{' '}
                 </div>
-
-
                 {/* quill editor */}
               </div>
             }
