@@ -1,11 +1,12 @@
 'use client';
+
 import * as React from 'react';
 import { MeetingClientImpl } from './components/MeetingClientImpl';
 import { isVideoCodec } from '@/lib/types';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
 import { Button } from '@/components/ui/button';
-import { ChevronLeftIcon } from 'lucide-react';
+import { ChevronLeftIcon, SquarePlay, X } from 'lucide-react';
 import { cn, LEARNING_URL } from '@/lib/utils';
 import { useToggleMeetingAndChat } from '@/hooks/use-toggle-meeting-and-chat';
 import { useStore } from '@/hooks/use-store';
@@ -29,6 +30,8 @@ export default function Component({
     codec?: string;
   };
 }) {
+  const [isNewFile, setIsNewFile] = React.useState(false)
+
   const params = useSearchParams()
 
   const router = useRouter()
@@ -52,9 +55,7 @@ export default function Component({
 
   const { userId, sessionId } = useAuth();
 
-  const { loading: roomLoading, data: dataCollaboration } = useJoinRoomQuery(scheduleDateIdParam)
-
-  // const [joinMeetingRoom, { loading: meetingRoomLoading, data: meeting }] = useGetMeetingRoom(scheduleDateIdParam)
+  const { loading: roomLoading, data: dataCollaboration, refetch } = useJoinRoomQuery(scheduleDateIdParam)
 
   const [getMeetingRoomJoinInfo, { loading: loadingRoomInfo, data: dataRoomInfo }] = useGetMeetingRoomJoinInfo(dataCollaboration?.collaborationSession.id ?? "")
 
@@ -63,8 +64,6 @@ export default function Component({
   const [addCollaborator] = useAddCollaborator()
 
   const [createDocument, { loading: loadingNewFile }] = useCreateDocument(dataCollaboration?.collaborationSession.id ?? "")
-
-  // const meetingCollaborationSession = meeting?.meetingRoom
 
   const collaborationSession = dataCollaboration?.collaborationSession
 
@@ -114,7 +113,14 @@ export default function Component({
   }
 
   const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
-    console.log("hahahahaha", data.collaborationSessionUpdated);
+    if (data) {
+      setIsNewFile(true)
+    }
+  }
+
+  const handleLoadNewFile = () => {
+    setIsNewFile(false)
+    refetch()
   }
 
   const handleFileEvent = (value: string) => {
@@ -143,7 +149,7 @@ export default function Component({
 
   React.useEffect(() => {
     useGetCollaborationSessionUpdated(sessionId, dataCollaboration?.collaborationSession.id, handleNewFileSubscription)
-  }, []);
+  }, [roomLoading]);
 
   if (userLoading || roomLoading || !user) {
     return <Loading />;
@@ -153,7 +159,7 @@ export default function Component({
     <div className='flex gap-5 w-full'>
       {/* Slice 1 with dynamic width */}
       <div
-        className={cn('transition-all duration-1000 ease-in-out')}
+        className={cn('relative transition-all duration-1000 ease-in-out')}
         style={{
           // con lạy cụ tỷ lệ vàng
           width: isMeetingAndChatOpen
@@ -161,7 +167,17 @@ export default function Component({
             : 'calc(24 / 25 * 100%)',
         }}
       >
-        {/* <ToolbarHeader documentId={dataCollaboration?.collaborationSession.activeDocumentId ?? ""}  /> */}
+        {isNewFile &&
+          <div className='absolute bottom-5 right-5 bg-gray-100 border-black border z-10 p-5'>
+            <X onClick={() => setIsNewFile(false)} className='absolute cursor-pointer top-2 right-2 w-3 h-3' />
+            <div className='mt-1'>
+              <p>File này hiện có thay đổi bạn có muốn thay đổi không ?</p>
+              <div>
+                <Button onClick={handleLoadNewFile} variant={"outline"} className='mt-2' size={"sm"}>Tải lại trang</Button>
+              </div>
+            </div>
+          </div>
+        }
         <Editor handleFileEvent={handleFileEvent} key={dataCollaboration?.collaborationSession.activeDocumentId} documentId={dataCollaboration?.collaborationSession.activeDocumentId ?? ""} />
       </div>
 
@@ -190,7 +206,10 @@ export default function Component({
         <div className={cn('z-30 relative flex-grow drop-shadow-sm pt-2 rounded-lg h-1/3 m-1', !dataRoomInfo && "border-black border")} >
           {
             !dataRoomInfo ?
-              <Button onClick={() => getMeetingRoomJoinInfo()} variant={"outline"} className='absolute border-black top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>Kết nối</Button>
+              isMeetingAndChatOpen ?
+                <Button onClick={() => getMeetingRoomJoinInfo()} variant={"outline"} className='absolute border-black top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>Kết nối</Button>
+                :
+                <SquarePlay strokeWidth={1} className='absolute border-black top-1/2 left-1/2 w-8 h-8 -translate-x-1/2 -translate-y-1/2' />
               :
               user &&
               <MeetingClientImpl
