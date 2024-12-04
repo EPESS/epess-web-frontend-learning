@@ -113,7 +113,7 @@ export default function Component({
   }
 
   const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
-    if (data) {
+    if (data && data.collaborationSessionUpdated.activeDocument.ownerId !== userId) {
       setIsNewFile(true)
     }
   }
