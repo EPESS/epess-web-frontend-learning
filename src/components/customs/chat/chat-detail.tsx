@@ -19,55 +19,74 @@ import CopyButton from '@/components/ui/copy-button'
 
 type TChatDetail = {
     roomId: string | undefined,
+    containerClassName?: string
 }
 
-const ChatDetail = ({ roomId }: TChatDetail) => {
+const ChatDetail = ({ roomId, containerClassName }: TChatDetail) => {
 
     const { isMeetingAndChatOpen } = useToggleMeetingAndChat()
 
     const { user } = useUser()
     const { sessionId } = useAuth()
 
-    const bottomRef = useRef<HTMLDivElement | null>(null);
 
-    const scrollRef = useRef<HTMLDivElement | null>(null);
-
-    const [sendMessage, { loading }] = useSendMessage()
-
-    const [skip, setSkip] = useState(0)
-    const [newMessage, setNewMessage] = useState<React.ReactNode | undefined>(undefined)
-    const [isMe, setIsMe] = useState<React.ReactNode | undefined>(undefined)
-
-    const { data: msg, loading: msgLoading, fetchMore } = useGetChatRoomDetail({
-        chatRoomId: roomId ?? '',
-        skip: skip,
-        take: 10
-    })
-
-    const [listMsg, setListMsg] = useState<Message[]>([])
-
-    const [isUserScroll, setIsUserScroll] = useState(false)
 
     const [incomingMessages, setIncomingMessages] = useState(0);
 
     const [showTooltip, setShowTooltip] = useState(false);
 
-    const handleSendMessage = ({ msg, type = MessageType.TEXT }: { msg: string | undefined, type?: MessageType }) => {
+
+    const bottomRef = useRef<HTMLDivElement | null>(null);
+
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+
+    const [sendMessage, { loading }] = useSendMessage();
+
+    const [skip, setSkip] = useState(0);
+
+    const {
+        data: msg,
+        loading: msgLoading,
+        fetchMore,
+    } = useGetChatRoomDetail({
+        chatRoomId: roomId ?? '',
+        skip: skip,
+        take: 10,
+    });
+
+    const [listMsg, setListMsg] = useState<Message[]>([]);
+
+    const [isUserScroll, setIsUserScroll] = useState(false);
+
+    const [newMessage, setNewMessage] = useState<React.ReactNode | undefined>(
+        undefined
+    );
+    const [isMe, setIsMe] = useState<React.ReactNode | undefined>(undefined);
+
+    const handleSendMessage = ({
+        msg,
+        type = MessageType.TEXT,
+    }: {
+        msg: string | undefined;
+        type?: MessageType;
+    }) => {
         if (!msg) return;
         sendMessage({
             variables: {
                 chatRoomId: roomId ?? '',
                 content: msg.trim(),
-                type
-            }
-        })
-        scrollToBottom()
-    }
+                type,
+            },
+        });
+        scrollToBottom();
+    };
 
     const subscribeMessages = async () => {
         if (!sessionId) return;
 
-        for await (const result of clientWS(sessionId).iterate<{ messageSent: Message }>({
+        for await (const result of clientWS(sessionId).iterate<{
+            messageSent: Message;
+        }>({
             query: `subscription MessageSent {
     messageSent(chatRoomId: "${roomId}") {
         chatRoomId
@@ -94,59 +113,61 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
                 const message = result.data.messageSent;
 
                 if (user?.id !== message.sender.id) {
-                    setNewMessage(<div className='rounded-md py-2 px-4 bg-amber-200'><span>Bạn có tin nhắn mới</span></div>)
+                    setNewMessage(
+                        <div className='rounded-md py-2 px-4 bg-amber-200 dark:bg-amber-900'>
+                            <span className='text-sm text-black'>Bạn có tin nhắn mới</span>
+                        </div>
+                    );
                 }
 
-                setListMsg(prev => {
-                    const msg = prev.find(item => item.id === message.id);
+                setListMsg((prev) => {
+                    const msg = prev.find((item) => item.id === message.id);
                     if (!msg) {
-                        return [message, ...prev]
+                        return [message, ...prev];
                     }
-                    return prev
-                })
+                    return prev;
+                });
             }
         }
-    }
+    };
 
     const handleScrollNewMessage = () => {
-        scrollToBottom()
-        setIsUserScroll(false)
-    }
+        scrollToBottom();
+        setIsUserScroll(false);
+    };
 
+    const isFetchMore = useRef(true);
     const handleScroll = async () => {
-
         if (scrollRef.current) {
             const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
 
             if (scrollHeight - scrollTop - clientHeight < 1) {
-                setNewMessage(undefined)
-                setIsMe(undefined)
-                setIsUserScroll(false)
+                setNewMessage(undefined);
+                setIsMe(undefined);
+                setIsUserScroll(false);
             }
 
             if (scrollHeight - scrollTop - clientHeight > 50) {
-                setIsMe(<ArrowDownCircle className='w-6 h-6' />)
+                setIsMe(<ArrowDownCircle fill='black' className='w-6 h-6' />);
             }
 
-            if (scrollTop === 0) {
-                setIsUserScroll(true)
-                setSkip(prev => {
+            if (scrollTop === 0 && isFetchMore.current) {
+                setIsUserScroll(true);
+                setSkip((prev) => {
                     (async () => {
                         const data = await fetchMore({
                             variables: {
                                 skip: prev + 20,
-                            }
-                        })
+                            },
+                        });
 
                         if (data.data.messages.length === 0) {
-                            scrollRef.current?.removeEventListener('scroll', handleScroll);
+                            isFetchMore.current = false;
                         }
-                    })()
-                    return prev + 10
-                }
-                )
+                    })();
+                    return prev + 10;
+                });
             }
-
         }
     };
 
@@ -161,18 +182,21 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
 
     useEffect(() => {
         if (msg?.messages) {
-            setListMsg(prev => [...prev, ...msg.messages]);
-            isUserScroll && scrollToBottom(100)
+            const newMsg = [...listMsg, ...msg.messages].filter(
+                (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+            );
+            setListMsg(newMsg);
+            isUserScroll && scrollToBottom(100);
         }
-    }, [msg?.messages])
+    }, [msg?.messages]);
 
     useEffect(() => {
-        scrollToBottom()
-    }, [])
+        scrollToBottom();
+    }, []);
 
     useEffect(() => {
-        subscribeMessages().catch((err) => console.log("hello", err));
-    }, [])
+        subscribeMessages().catch((err) => console.log('hello', err));
+    }, []);
 
     useEffect(() => {
         const scrollArea = scrollRef.current;
@@ -183,13 +207,9 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
 
     useEffect(() => {
         return () => {
-            setListMsg([])
-        }
-    }, [])
-
-
-
-
+            setListMsg([]);
+        };
+    }, []);
 
 
     useEffect(() => {
@@ -219,7 +239,7 @@ const ChatDetail = ({ roomId }: TChatDetail) => {
                         </div>
                     </div>
                 }
-                <div className={cn('flex h-[88%] flex-col justify-end')}>
+                <div className={cn('flex h-[88%] flex-col justify-end', containerClassName)}>
                     <ScrollArea ref={scrollRef} className='h-[80vh]'>
                         <div>
                             {msgLoading && <div className='flex justify-center mt-10'><ScaleLoader /></div>}

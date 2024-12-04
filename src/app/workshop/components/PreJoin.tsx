@@ -134,9 +134,9 @@ export function usePreviewDevice<T extends LocalVideoTrack | LocalAudioTrack>(
       const track =
         kind === 'videoinput'
           ? await createLocalVideoTrack({
-              deviceId: deviceId,
-              resolution: VideoPresets.h720.resolution,
-            })
+            deviceId: deviceId,
+            resolution: VideoPresets.h720.resolution,
+          })
           : await createLocalAudioTrack({ deviceId });
 
       const newDeviceId = await track.getDeviceId();
@@ -245,7 +245,6 @@ export function PreJoin({
   joinLabel = 'Tham gia cuộc họp',
   micLabel = 'Microphone',
   camLabel = 'Camera',
-  userLabel = 'Username',
   persistUserChoices = true,
   imgPlaceholder,
   ...htmlProps
@@ -295,7 +294,7 @@ export function PreJoin({
   const [videoDeviceId, setVideoDeviceId] = React.useState<string>(
     initialUserChoices.videoDeviceId
   );
-  const [username, setUsername] = React.useState(initialUserChoices.username);
+  const username = initialUserChoices.username;
 
   // Save user choices to persistent storage.
   React.useEffect(() => {
@@ -481,7 +480,7 @@ export function PreJoin({
 
       <form className='lk-username-container'>
         <div className='flex flex-col gap-2'>
-          <span className='text-medium text-foreground font-semibold font-sans'>
+          {/* <span className='text-medium text-foreground font-semibold font-sans'>
             Tên tham gia:
           </span>
           <input
@@ -493,7 +492,7 @@ export function PreJoin({
             placeholder={userLabel}
             onChange={(inputEl) => setUsername(inputEl.target.value)}
             autoComplete='off'
-          />
+          /> */}
         </div>
         <div className='flex flex-col gap-2'>
           <span className='text-medium text-foreground font-semibold font-sans'>

@@ -41,7 +41,7 @@ const ToolTipCustom = ({ content, triggerChildren }: TToolTipCustom) => {
 
             case UploadedFileType.Document: {
                 return (
-                    <div className='bg-gray-200 h-auto p-1 rounded-md'>
+                    <div className='bg-gray-200 text-black text-sm h-auto p-1 rounded-md'>
                         <Button className='!h-auto' asChild variant={"link"}>
                             <div className='flex items-center gap-2'>
                                 <File className='w-5 h-5' />
@@ -65,7 +65,7 @@ const ToolTipCustom = ({ content, triggerChildren }: TToolTipCustom) => {
 
             default:
                 if (isURL(message)) {
-                    return <div className='bg-gray-200 h-auto p-1 rounded-md'>
+                    return <div className='bg-gray-200 text-black text-sm h-auto p-1 rounded-md'>
                         <Button className='!h-auto' asChild variant={"link"}>
                             <div className='flex items-center gap-2'>
                                 <LinkIcon className='w-5 h-5' />
@@ -86,7 +86,7 @@ const ToolTipCustom = ({ content, triggerChildren }: TToolTipCustom) => {
                     </div>
                 } else {
                     return <div
-                        className={cn('border bg-gray-200 rounded-md p-2 w-fit text-start')}
+                        className={cn('border bg-gray-200 text-black text-sm rounded-md p-2 w-fit text-start')}
                         style={{
                             whiteSpace: "pre-wrap",
                             wordBreak: "break-word",
