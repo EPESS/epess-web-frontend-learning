@@ -3,8 +3,9 @@
 import React from 'react';
 import { Plus } from 'lucide-react'
 import Card from './component/Card';
-import { MYDOCUMENT, useCreateSelfDocument, useGetMyDocuments } from '../api/document';
+import { MYDOCUMENT, useAddCollaborator, useCreateSelfDocument, useGetMyDocuments } from '../api/document';
 import ScaleLoader from 'react-spinners/ScaleLoader';
+import { toast } from 'react-toastify';
 
 
 export default function DocumentList() {
@@ -15,8 +16,23 @@ export default function DocumentList() {
 
   const [createSelfDocument, { loading: createLoading }] = useCreateSelfDocument()
 
+  const [addCollaborator, { loading: addLoading }] = useAddCollaborator()
+
   const createNewDocument = () => {
+    if (createLoading || addLoading) return
+
     createSelfDocument({
+      onCompleted: (data) => {
+        addCollaborator({
+          variables: {
+            documentId: data.createDocument.id,
+            userId: data.createDocument.ownerId
+          },
+          onError: () => {
+            toast("Thêm người dùng lỗi")
+          }
+        })
+      },
       awaitRefetchQueries: true,
       refetchQueries: [MYDOCUMENT, "myDocuments"]
     })

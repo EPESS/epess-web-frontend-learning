@@ -188,31 +188,37 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                         </div>
                                         <span className='text-[15px] font-semibold text-black'>{document.user.name}</span>
                                     </div>
-                                    <div className='flex gap-1 items-center' >
-                                        {user?.id !== data.document.ownerId ?
-                                            document.writable ?
-                                                <Button size={"sm"} variant={"outline"}>Chỉnh sửa</Button>
-                                                :
-                                                <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>
+                                    {
+                                        data.document.ownerId === document.user.id
+                                            ?
+                                            <span className='text-yellow-500'>Chủ sở hữu</span>
                                             :
-                                            <DropdownMenuCheckboxes
-                                                isOpenAfterClick={false}
-                                                handleOnChange={(value) => editCollaboratorPermission(value?.toString(), document.user.id)}
-                                                defaultValue={document.writable ? "edit" : "readonly"}
-                                                options={[
-                                                    { label: "Chỉnh sửa", value: "edit" },
-                                                    { label: "Chỉ đọc", value: "readonly" },
-                                                ]}
-                                                buttonLabel={document.writable ?
-                                                    <Button size={"sm"} variant={"outline"}>Chỉnh sửa</Button>
+                                            <div className='flex gap-1 items-center' >
+                                                {user?.id !== data.document.ownerId ?
+                                                    document.writable ?
+                                                        <Button size={"sm"} variant={"outline"}>Chỉnh sửa</Button>
+                                                        :
+                                                        <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>
                                                     :
-                                                    <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>}
-                                            />
-                                        }
-                                        {user?.id === data.document?.ownerId &&
-                                            <X onClick={() => removeUserToDocument(document.user.id)} className='cursor-pointer w-5 h-5' />
-                                        }
-                                    </div>
+                                                    <DropdownMenuCheckboxes
+                                                        isOpenAfterClick={false}
+                                                        handleOnChange={(value) => editCollaboratorPermission(value?.toString(), document.user.id)}
+                                                        defaultValue={document.writable ? "edit" : "readonly"}
+                                                        options={[
+                                                            { label: "Chỉnh sửa", value: "edit" },
+                                                            { label: "Chỉ đọc", value: "readonly" },
+                                                        ]}
+                                                        buttonLabel={document.writable ?
+                                                            <Button size={"sm"} variant={"outline"}>Chỉnh sửa</Button>
+                                                            :
+                                                            <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>}
+                                                    />
+                                                }
+                                                {user?.id === data.document?.ownerId &&
+                                                    <X onClick={() => removeUserToDocument(document.user.id)} className='cursor-pointer w-5 h-5' />
+                                                }
+                                            </div>
+                                    }
                                 </div>
                             ))}
                         </div>
