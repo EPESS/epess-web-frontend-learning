@@ -42,8 +42,8 @@ import { cn } from '@/lib/utils';
 declare const window: Window | undefined;
 
 export type TConnectionDetailsDTO = ConnectionDetails & {
-  participantAvatar: string | null
-}
+  participantAvatar: string | null;
+};
 
 function MeetingClientImplCpn(props: {
   loading?: boolean;
@@ -51,13 +51,11 @@ function MeetingClientImplCpn(props: {
   hq: boolean; // high quality
   codec: VideoCodec;
   user: User;
-  connectionDetail: TConnectionDetailsDTO
+  connectionDetail: TConnectionDetailsDTO;
 }) {
   const [preJoinChoices, setPreJoinChoices] = useState<
     LocalUserChoices | undefined
   >(undefined);
-
-
 
   useEffect(() => {
     if (props.user) {
@@ -186,7 +184,8 @@ function VideoConferenceComponent(props: {
           (device) => device.kind === 'videoinput'
         );
         toast.error(
-          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${hasCamera ? '' : 'camera'
+          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
+            hasCamera ? '' : 'camera'
           } không tồn tại`,
           {
             theme: 'colored',
@@ -259,12 +258,13 @@ function VideoConferenceComponent(props: {
 
         <RecordingIndicator />
 
-        {!isMeetingAndChatOpen && (
-          <ControlBar
-            className='flex flex-col gap-5 m-0 p-0 !border-none'
-            vertical={true}
-          />
-        )}
+        <ControlBar
+          className={cn(
+            'flex flex-col gap-5 m-0 p-0 !border-none',
+            isMeetingAndChatOpen && '!hidden'
+          )}
+          vertical={true}
+        />
       </LiveKitRoom>
     </>
   );
