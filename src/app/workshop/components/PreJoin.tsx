@@ -26,6 +26,7 @@ import {
 import { defaultUserChoices } from '@livekit/components-core';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AvatarImage } from '@radix-ui/react-avatar';
+import { Loader2 } from 'lucide-react';
 
 /**
  * Props for the PreJoin component.
@@ -34,7 +35,7 @@ import { AvatarImage } from '@radix-ui/react-avatar';
 export interface PreJoinProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSubmit' | 'onError'> {
   /** This function is called with the `LocalUserChoices` if validation is passed. */
-  onSubmit?: (values: LocalUserChoices) => void;
+  onSubmit?: (values: LocalUserChoices) => Promise<void>;
   /**
    * Provide your custom validation function. Only if validation is successful the user choices are past to the onSubmit callback.
    */
@@ -43,8 +44,8 @@ export interface PreJoinProps
   /** Prefill the input form with initial values. */
   defaults?: Partial<LocalUserChoices>;
   /** Display a debug window for your convenience. */
-  roomIdData?: string;
-  setRoomIdData?: (roomId: string) => void;
+  workshopIdData?: string;
+  setWorkshopIdData?: (workshopId: string) => void;
   debug?: boolean;
   joinLabel?: string;
   micLabel?: string;
@@ -134,9 +135,9 @@ export function usePreviewDevice<T extends LocalVideoTrack | LocalAudioTrack>(
       const track =
         kind === 'videoinput'
           ? await createLocalVideoTrack({
-            deviceId: deviceId,
-            resolution: VideoPresets.h720.resolution,
-          })
+              deviceId: deviceId,
+              resolution: VideoPresets.h720.resolution,
+            })
           : await createLocalAudioTrack({ deviceId });
 
       const newDeviceId = await track.getDeviceId();
@@ -235,8 +236,8 @@ export function usePreviewDevice<T extends LocalVideoTrack | LocalAudioTrack>(
  * @public
  */
 export function PreJoin({
-  roomIdData,
-  setRoomIdData,
+  workshopIdData,
+  setWorkshopIdData,
   defaults = {},
   onValidate,
   onSubmit,
@@ -395,11 +396,14 @@ export function PreJoin({
     videoDeviceId,
   ]);
 
-  function handleSubmit(event: React.FormEvent) {
+  const [isLoading, setIsLoading] = React.useState(false);
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (handleValidation(userChoices)) {
       if (typeof onSubmit === 'function') {
-        onSubmit(userChoices);
+        setIsLoading(true);
+        await onSubmit(userChoices);
+        setIsLoading(false);
       }
     } else {
       log.warn('Validation failed with: ', userChoices);
@@ -479,8 +483,8 @@ export function PreJoin({
       </div>
 
       <form className='lk-username-container'>
-        <div className='flex flex-col gap-2'>
-          {/* <span className='text-medium text-foreground font-semibold font-sans'>
+        {/* <div className='flex flex-col gap-2'>
+          <span className='text-medium text-foreground font-semibold font-sans'>
             Tên tham gia:
           </span>
           <input
@@ -492,20 +496,20 @@ export function PreJoin({
             placeholder={userLabel}
             onChange={(inputEl) => setUsername(inputEl.target.value)}
             autoComplete='off'
-          /> */}
-        </div>
+          /> 
+        </div> */}
         <div className='flex flex-col gap-2'>
           <span className='text-medium text-foreground font-semibold font-sans'>
-            ID phòng
+            Mã workshop
           </span>
           <input
             className='lk-form-control !text-secondary-foreground !bg-secondary'
             id='roomData'
             name='roomData'
             type='text'
-            defaultValue={roomIdData}
-            placeholder='Nhập ID phòng'
-            onChange={(inputEl) => setRoomIdData?.(inputEl.target.value)}
+            defaultValue={workshopIdData}
+            placeholder='Nhập mã workshop'
+            onChange={(inputEl) => setWorkshopIdData?.(inputEl.target.value)}
             autoComplete='off'
           />
         </div>
@@ -513,9 +517,16 @@ export function PreJoin({
           className='lk-button lk-join-button'
           type='submit'
           onClick={handleSubmit}
-          disabled={!isValid || !roomIdData}
+          disabled={!isValid || !workshopIdData || isLoading}
         >
-          {joinLabel}
+          {isLoading ? (
+            <div className='flex items-center gap-2'>
+              <Loader2 className='w-4 h-4 animate-spin' />
+              <span>Đang tham gia...</span>
+            </div>
+          ) : (
+            joinLabel
+          )}
         </button>
       </form>
 

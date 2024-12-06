@@ -176,9 +176,8 @@ export const ParticipantTile: (
                     <AvatarImage
                       src={
                         trackReference.participant.metadata
-                          ? JSON.parse(trackReference.participant.metadata)
-                              .avatarUrl
-                          : ''
+                          ? trackReference.participant.metadata
+                          : undefined
                       }
                       alt='Participant'
                     />

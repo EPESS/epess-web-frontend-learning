@@ -6,7 +6,7 @@ export default function Page({
   searchParams,
 }: {
   searchParams: {
-    roomId?: string;
+    workshopId?: string;
     hq?: string;
     codec?: string;
   };
@@ -19,7 +19,7 @@ export default function Page({
 
   return (
     <PageClientImpl
-      roomIdData={searchParams.roomId ?? ''}
+      workshopIdData={searchParams.workshopId ?? ''}
       hq={hq}
       codec={codec}
     />

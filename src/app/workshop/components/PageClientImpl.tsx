@@ -39,15 +39,17 @@ import { Chat } from './Chat';
 import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
 
 declare const window: Window | undefined;
-const CONN_DETAILS_ENDPOINT = '/api/connection-details';
+const CONN_DETAILS_ENDPOINT = '/api/workshop-connection-details';
 
 export function PageClientImpl(props: {
-  roomIdData: string;
+  workshopIdData: string;
   hq: boolean;
   codec: VideoCodec;
 }) {
   const { user, userLoading } = useMe();
-  const [roomId, setRoomId] = useState<string | undefined>(props.roomIdData);
+  const [workshopId, setWorkshopId] = useState<string | undefined>(
+    props.workshopIdData
+  );
 
   const [preJoinChoices, setPreJoinChoices] = React.useState<
     LocalUserChoices | undefined
@@ -63,15 +65,30 @@ export function PageClientImpl(props: {
 
   const handlePreJoinSubmit = React.useCallback(
     async (values: LocalUserChoices) => {
-      setPreJoinChoices(values);
-      const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
-      url.searchParams.append('roomName', roomId ?? '');
-      url.searchParams.append('participantName', values.username);
-      const connectionDetailsResp = await fetch(url.toString());
-      const connectionDetailsData = await connectionDetailsResp.json();
-      setConnectionDetails(connectionDetailsData);
+      try {
+        setPreJoinChoices(values);
+        const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
+        url.searchParams.append('workshopId', workshopId ?? '');
+        url.searchParams.append('name', user?.name ?? '');
+        const connectionDetailsResp = await fetch(url.toString());
+        const connectionDetailsData = await connectionDetailsResp.json();
+        if (connectionDetailsData.error) {
+          throw new Error(connectionDetailsData.message);
+        }
+        setConnectionDetails(connectionDetailsData);
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message == 'Meeting room not found') {
+            toast.error('Phòng học không tồn tại', {
+              theme: 'colored',
+            });
+          }
+        } else {
+          console.log(error);
+        }
+      }
     },
-    [roomId]
+    [workshopId, user]
   );
   const handlePreJoinError = React.useCallback((e: Error) => {
     console.error(e);
@@ -145,8 +162,8 @@ export function PageClientImpl(props: {
                   onSubmit={handlePreJoinSubmit}
                   onError={handlePreJoinError}
                   persistUserChoices={false}
-                  roomIdData={roomId}
-                  setRoomIdData={setRoomId}
+                  workshopIdData={workshopId}
+                  setWorkshopIdData={setWorkshopId}
                 />
               </div>
             </div>
@@ -191,7 +208,7 @@ function VideoConferenceComponent(props: {
       },
       audioCaptureDefaults: {
         deviceId: props.userChoices.audioDeviceId ?? undefined,
-        echoCancellation:true
+        echoCancellation: true,
       },
       adaptiveStream: { pixelDensity: 'screen' },
       dynacast: true,
