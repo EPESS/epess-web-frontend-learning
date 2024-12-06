@@ -3,7 +3,7 @@ import '@/styles/globals.css';
 import '@livekit/components-styles';
 import '@livekit/components-styles/prefabs';
 import 'react-toastify/dist/ReactToastify.css';
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { ToastContainer } from 'react-toastify';
 import ApolloClientProvider from '@/providers/apolloClient';
 import LayoutWrapper from '@/components/layout-wrapper';
@@ -11,10 +11,6 @@ import LayoutWrapper from '@/components/layout-wrapper';
 export const metadata: Metadata = {
   title: 'EPESS',
   description: 'Essay Platform for Essay Support Services',
-};
-
-export const viewport: Viewport = {
-  themeColor: '#070707',
 };
 
 export default function RootLayout({
@@ -26,12 +22,12 @@ export default function RootLayout({
     <ClerkProvider>
       <ApolloClientProvider>
         <html lang='en'>
-          <body className='light'>
+          <body>
             <ToastContainer limit={3} />
             <LayoutWrapper>
-                <div>
-                  {children}
-                </div>
+              <div>
+                {children}
+              </div>
             </LayoutWrapper>
           </body>
         </html>

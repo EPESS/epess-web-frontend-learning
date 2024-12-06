@@ -208,6 +208,14 @@ h2 a {
   }
 }
 
+.display-toolbar{
+  display: block !important;
+}
+
+.display-none-toolbar{
+  display: none !important
+}
+
 .bg-login-custom {
   background-image: var(--bg-login-custom);
   background-attachment: fixed;

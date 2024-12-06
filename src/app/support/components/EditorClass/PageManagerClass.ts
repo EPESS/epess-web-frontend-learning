@@ -1,4 +1,4 @@
-import Toolbar from "quill/modules/toolbar";
+import Toolbar, { ToolbarProps } from "quill/modules/toolbar";
 import { Client } from 'graphql-ws';
 import Quill, { Parchment } from 'quill';
 import { Delta, EmitterSource } from 'quill/core';
@@ -19,6 +19,29 @@ export enum EVENT_NAMES {
     AI_SUGGESTION = 'ai-suggestion',
     PAGE_DELETE = 'page-delete',
 }
+
+
+const toolbarOptions = [
+    ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+    ['blockquote', 'code-block'],
+    ['link', 'image', 'video', 'formula'],
+
+    [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
+    [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
+    [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
+    [{ 'direction': 'rtl' }],                         // text direction
+
+    [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+    [{ 'color': ["red", "blue", "orange", "yellow", "purple", "grey", "green", "brown", "pink", "cyan", "black", "white", "lightgreen"] }, { 'background': ["red", "blue", "orange", "yellow", "purple", "grey", "green", "brown", "pink", "cyan", "black", "white", "lightgreen"] }],          // dropdown with defaults from theme
+    [{ 'font': ["", "serif", "monospace"] }],
+    [{ 'align': ["", "center", "right", "justify"] }],
+
+    ['clean']                                         // remove formatting button
+];
+
 
 export const GLOBAL_MARGIN = 30;
 
@@ -99,8 +122,6 @@ export default class PageManager {
     public sessionId: string = ""
     public isReadOnly: boolean = false
 
-
-
     get currentPageIndex() {
 
         return this._currentPageIndex;
@@ -109,11 +130,13 @@ export default class PageManager {
         this._currentPageIndex = index;
         this.attachToolbarToPage(index);
     }
-    get toolbar() {
-        return new Toolbar(this.pages[this.currentPageIndex], {
-            container: document.getElementById('toolbar'),
-        });
-    }
+
+    // get toolbar() {
+    //     const firstPage = this.getFirstPage();
+    //     let toolbar = firstPage.options.modules;
+
+    //     return toolbar;
+    // }
 
     subscribeDocument = async (documentId: string) => {
         for await (const result of this.clientWS.iterate<{ document: { senderId: string, requestSync: boolean, delta: string, documentId: string, pageIndex: number } }>({
@@ -162,15 +185,21 @@ export default class PageManager {
         this.subscribeDocument(docID)
         // this.deltaManager = new DeltaManager(quill.getContents());
     }
-    static newQuill(container: HTMLElement, isReadOnly: boolean,) {
-        return new QuillWrapper(container, {
+    static newQuill(container: HTMLElement, isReadOnly: boolean) {
+        const quill = new QuillWrapper(container, {
             readOnly: isReadOnly,
             modules: {
-                toolbar: false,
+                toolbar: toolbarOptions,
             },
             placeholder: 'Type here...',
             theme: 'snow',
         });
+
+        const toolbarElement = (quill.getModule('toolbar') as ToolbarProps).container as Element;
+
+        toolbarElement.classList.add(`toolbar-customer`);
+
+        return quill
     }
     registerGlobalModule(module: any) {
         this.QuillWrapper.register(module, true);
@@ -182,9 +211,9 @@ export default class PageManager {
         return registry;
     }
 
-    getToolbar() {
-        return this.toolbar;
-    }
+    // getToolbar() {
+    //     return this.toolbar;
+    // }
 
     // newPage return page reference
     newPage(container: HTMLElement) {
@@ -210,14 +239,14 @@ export default class PageManager {
         newPage.id = `page-${this.pages.length}`;
         newPage.style.width = `${width}mm`;
         newPage.style.height = `${height}mm`;
-        newPage.style.marginTop = `${this.config.margin}px`;
-        newPage.style.marginBottom = `${this.config.margin}px`;
+        newPage.style.margin = `${this.config.margin}px auto`;
         newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
         // create new quill instance and push to page list
         const newQuill = PageManager.newQuill(newPage, this.isReadOnly);
         this.pushToPageList(newQuill);
+        this.moveCursorToNextPage()
         return newQuill;
     }
 
@@ -228,8 +257,7 @@ export default class PageManager {
         newPage.id = `page-${this.pages.length}`;
         newPage.style.width = `${width}mm`;
         newPage.style.height = `${height}mm`;
-        newPage.style.marginTop = `${this.config.margin}px`;
-        newPage.style.marginBottom = `${this.config.margin}px`;
+        newPage.style.margin = `${this.config.margin}px auto`;
         newPage.className = 'overflow-auto min-h-full bg-white drop-shadow-lg';
         // append new page to document after last page
         this.getLastPage().container.after(newPage);
@@ -237,6 +265,7 @@ export default class PageManager {
         const newQuill = PageManager.newQuill(newPage, this.isReadOnly);
         newQuill.setContents(data)
         this.pushToPageList(newQuill);
+        this.moveCursorToNextPage()
         return newQuill;
     }
 
@@ -359,8 +388,14 @@ export default class PageManager {
     pushToPageList(page: QuillWrapper) {
         let tooltip = document.createElement('div');
 
-        // pre push section
-        // register event listener
+        page.root.addEventListener("focus", () => {
+            if (this.currentPageIndex !== this.pages.indexOf(page)) {
+
+                this.currentPageIndex = this.pages.indexOf(page);
+                // update toolbar
+                this.attachToolbarToPage(this.pages.indexOf(page));
+            }
+        })
 
         page.on(EVENT_NAMES.TEXT_CHANGE, (delta, oldDelta, source) => {
             if (source === QuillWrapper.sources.SILENT) {
@@ -390,17 +425,22 @@ export default class PageManager {
 
         page.on(EVENT_NAMES.EDITOR_CHANGE, () => {
 
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Backspace" || e.key === "Delete") {
+                    tooltip.style.display = "none"
+                }
+            })
+
+
+
             // Check if the current page is overflowing
             if (PageManager.isPageOverflowing(page)) {
                 console.log('page is overflowing');
                 this.trimOverflowingContent(page);
             }
             // update current page index if page index change
-            if (this.currentPageIndex !== this.pages.indexOf(page)) {
-                this.currentPageIndex = this.pages.indexOf(page);
-                // update toolbar
-                this.attachToolbarToPage(this.currentPageIndex);
-            }
+
         });
         page.on(EVENT_NAMES.SELECTION_CHANGE, (range) => {
             let editor = document.querySelector(`#page-${this.currentPageIndex} .ql-editor`);
@@ -500,10 +540,18 @@ export default class PageManager {
         this.getCurrentPage().setSelection(0);
     }
 
-    attachToolbarToPage(index: number) {
-        // if (this.pages[index].options.modules.toolbar) {
-        this.pages[index].options.modules.toolbar = this.toolbar;
-        // }
+    attachToolbarToPage(indexToolbar: number) {
+        const listToolBar = document.getElementsByClassName("toolbar-customer")
+
+        Array.from(listToolBar).forEach((toolbar, index) => {
+            if (indexToolbar === index) {
+                toolbar.classList.add("display-toolbar")
+                toolbar.classList.remove("display-none-toolbar")
+            } else {
+                toolbar.classList.remove("display-toolbar")
+                toolbar.classList.add("display-none-toolbar")
+            }
+        })
     }
 
     // focusToPage(index: number) {
