@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Clock, Check } from 'lucide-react'
+import { CheckCircle, XCircle, Check } from 'lucide-react'
 
 export interface QuizResult {
     numberOfQuestions: number
@@ -86,37 +86,37 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
             <div className="container mx-auto px-4 py-8">
                 <Card className="mb-8">
                     <CardHeader>
-                        <CardTitle>Quiz Results</CardTitle>
-                        <CardDescription>Here's how you performed on the quiz</CardDescription>
+                        <CardTitle>Kết quả bài kiểm tra</CardTitle>
+                        <CardDescription>Vui lòng đợi giảng viên tư vấn nhé. Xin cảm ơn !</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.numberOfQuestions}</h3>
-                                <p className="text-sm text-muted-foreground">Total Questions</p>
+                                <p className="text-sm text-muted-foreground">Tổng câu hỏi</p>
                             </div>
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.numberOfCorrectAnswers}</h3>
-                                <p className="text-sm text-muted-foreground">Correct Answers</p>
+                                <p className="text-sm text-muted-foreground">Số câu trả lời đúng</p>
                             </div>
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.correctPoints}/{result.totalPoints}</h3>
-                                <p className="text-sm text-muted-foreground">Points Scored</p>
+                                <p className="text-sm text-muted-foreground">Điểm</p>
                             </div>
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.timeTaken ? `${result.timeTaken}s` : 'N/A'}</h3>
-                                <p className="text-sm text-muted-foreground">Time Taken</p>
+                                <p className="text-sm text-muted-foreground">Thời gian làm</p>
                             </div>
                         </div>
                         <div className="mt-6">
                             <h4 className="text-lg font-semibold mb-2">Overall Score</h4>
                             <Progress value={percentageScore} className="w-full" />
-                            <p className="text-sm text-muted-foreground mt-2">{percentageScore.toFixed(2)}% Correct</p>
+                            <p className="text-sm text-muted-foreground mt-2">{percentageScore.toFixed(2)}% Đúng</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <h2 className="text-2xl font-bold mb-4">Question Details</h2>
+                <h2 className="text-2xl font-bold mb-4">Chi tiết các câu hỏi</h2>
                 {result.questions.map((question, index) => (
                     <Card key={question.questionIndex} className="mb-6">
                         <CardHeader>
@@ -169,7 +169,7 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                                     className="text-xs"
                                     onClick={() => toggleExplanation(question.questionIndex)}
                                 >
-                                    {openExplanations[question.questionIndex] ? "Hide" : "View"} Explanation
+                                    {openExplanations[question.questionIndex] ? "Hide" : "View"} Giải thích
                                 </Button>
                             </div>
                             {openExplanations[question.questionIndex] && (
