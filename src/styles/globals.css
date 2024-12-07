@@ -288,3 +288,19 @@ h2 a {
     scrollbar-width: none; /* Firefox */
   }
 }
+
+.react-quiz-container .quiz-result-filter {
+  .filter-dropdown-select  {
+      margin: 0 !important;
+      height: auto !important;
+      bottom: 0 !important;
+
+      .selected-option{
+        bottom: 0 !important;
+      }
+  }
+
+  .filter-dropdown-select:after{
+    top: 50% !important;
+  }
+}

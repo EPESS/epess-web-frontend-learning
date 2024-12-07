@@ -46,6 +46,7 @@
     "react-dom": "^18",
     "react-loading": "^2.0.3",
     "react-quilljs": "^2.0.4",
+    "react-quiz-component": "^0.9.1",
     "react-resizable-panels": "^2.1.6",
     "react-ruler": "^0.15.1",
     "react-spinners": "^0.14.1",
