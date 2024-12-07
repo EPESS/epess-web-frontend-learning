@@ -2,16 +2,19 @@
 
 import React from 'react'
 import Quiz from 'react-quiz-component';
+import RenderQuizResults, { QuizResult } from './quizResult';
 
 const QuizComponent = () => {
     const quizData = {
         "quizTitle": "Bài test kiểm tra",
-        "quizSynopsis": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim",
+        "quizSynopsis": "Lưu ý đọc kĩ nội dung trước khi vào làm bài. Chỉ được chọn câu trả lời đúng 1 lần nên hãy chọn cẩn thận trước khi nhấn câu trả lời.",
         "progressBarColor": "#9de1f6",
-        "nrOfQuestions": "4",
+        "nrOfQuestions": "6",
         "appLocale": {
             "landingHeaderText": "<questionLength> câu hỏi",
             "question": "Câu hỏi",
+            "timerTimeRemaining": "Thời gian còn lại",
+            "timerTimeTaken": "Thời gian làm bài",
             "startQuizBtn": "Bắt đầu làm bài",
             "resultFilterAll": "Tất cả",
             "resultFilterCorrect": "Đúng",
@@ -122,9 +125,14 @@ const QuizComponent = () => {
         ]
     }
 
+    const handleReceiveResult = (result: QuizResult) => {
+        return <RenderQuizResults defaultResult={result} key={result.toString()} />
+    }
+
     return (
         <div className='border-[5px] min-w-[40vw] max-w-[70vw] min-h-[50vh] max-h-[80%] overflow-y-auto border-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-            <Quiz quiz={quizData} shuffleAnswer={true} shuffle={true} />
+            {/* <QuizResults /> */}
+            <Quiz quiz={quizData} timer={60} enableProgressBar={true} showDefaultResult={false} customResultPage={handleReceiveResult} shuffleAnswer={true} shuffle={true} />
         </div>
         // </div>
     )
