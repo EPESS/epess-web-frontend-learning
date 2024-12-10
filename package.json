@@ -37,6 +37,7 @@
     "graphql": "^16.9.0",
     "graphql-ws": "^5.16.0",
     "gsap": "^3.12.5",
+    "html2canvas": "^1.4.1",
     "livekit-client": "^2.6.0",
     "livekit-server-sdk": "^2.7.3",
     "lucide-react": "^0.454.0",
