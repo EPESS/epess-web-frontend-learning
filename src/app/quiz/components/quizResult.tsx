@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Check } from 'lucide-react'
+import { CheckCircle, XCircle } from 'lucide-react'
 
 export interface QuizResult {
     numberOfQuestions: number
@@ -24,7 +24,7 @@ export interface QuizResult {
     userInput: (number[] | number)[]
     totalPoints: number
     correctPoints: number
-    timeTaken: number | null
+    timeTaken?: number | null
 }
 
 export default function RenderQuizResults({ defaultResult }: { defaultResult: QuizResult }) {
@@ -90,26 +90,26 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                         <CardDescription>Vui lòng đợi giảng viên tư vấn nhé. Xin cảm ơn !</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.numberOfQuestions}</h3>
                                 <p className="text-sm text-muted-foreground">Tổng câu hỏi</p>
                             </div>
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.numberOfCorrectAnswers}</h3>
-                                <p className="text-sm text-muted-foreground">Số câu trả lời đúng</p>
+                                <p className="text-sm text-muted-foreground">câu trả lời đúng</p>
                             </div>
                             <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.correctPoints}/{result.totalPoints}</h3>
                                 <p className="text-sm text-muted-foreground">Điểm</p>
                             </div>
-                            <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
+                            {/* <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                                 <h3 className="text-2xl font-bold">{result.timeTaken ? `${result.timeTaken}s` : 'N/A'}</h3>
                                 <p className="text-sm text-muted-foreground">Thời gian làm</p>
-                            </div>
+                            </div> */}
                         </div>
                         <div className="mt-6">
-                            <h4 className="text-lg font-semibold mb-2">Overall Score</h4>
+                            <h4 className="text-lg font-semibold mb-2">Tổng điểm</h4>
                             <Progress value={percentageScore} className="w-full" />
                             <p className="text-sm text-muted-foreground mt-2">{percentageScore.toFixed(2)}% Đúng</p>
                         </div>
@@ -121,13 +121,14 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                     <Card key={question.questionIndex} className="mb-6">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <span>Question {question.questionIndex}</span>
+                                <span>Câu hỏi {question.questionIndex}</span>
                                 {Array.isArray(result.userInput[index])
                                     ? JSON.stringify(result.userInput[index]) === JSON.stringify(question.correctAnswer)
                                     : result.userInput[index].toString() === question.correctAnswer.toString()
                                         ? <CheckCircle className="text-green-500" />
                                         : <XCircle className="text-red-500" />
                                 }
+                                <span>( {question.point} điểm )</span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -139,10 +140,10 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                                             variant={
                                                 Array.isArray(question.correctAnswer)
                                                     ? question.correctAnswer.includes(ansIndex + 1)
-                                                        ? "default"
-                                                        : "outline"
-                                                    : Number(question.correctAnswer) === ansIndex + 1
-                                                        ? "default"
+                                                        ? "green"
+                                                        : "destructive"
+                                                    : !isAnswerIncorrect(index, ansIndex + 1) && Number(question.correctAnswer) === ansIndex + 1
+                                                        ? "green"
                                                         : "outline"
                                             }
                                         >
@@ -156,8 +157,8 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                                             {answer}
                                         </span>
                                         {isAnswerSelected(index, ansIndex + 1) && (
-                                            <div>
-                                                <Check className="text-blue-500 ml-2" size={20} />
+                                            <div className="flex items-center gap-1">
+                                                <span>Bạn</span>
                                             </div>
                                         )}
                                     </div>
@@ -169,7 +170,7 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                                     className="text-xs"
                                     onClick={() => toggleExplanation(question.questionIndex)}
                                 >
-                                    {openExplanations[question.questionIndex] ? "Hide" : "View"} Giải thích
+                                    {openExplanations[question.questionIndex] ? "Đóng" : "Xem"} giải thích
                                 </Button>
                             </div>
                             {openExplanations[question.questionIndex] && (

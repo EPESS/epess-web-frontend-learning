@@ -148,7 +148,7 @@ const ChatDetail = ({ roomId, containerClassName }: TChatDetail) => {
             }
 
             if (scrollHeight - scrollTop - clientHeight > 50) {
-                setIsMe(<ArrowDownCircle fill='black' className='w-6 h-6' />);
+                setIsMe(<ArrowDownCircle className='w-6 h-6' />);
             }
 
             if (scrollTop === 0 && isFetchMore.current) {
