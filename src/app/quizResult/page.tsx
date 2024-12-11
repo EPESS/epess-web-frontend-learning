@@ -46,7 +46,7 @@ const QuizResults = () => {
           <div className=' border-2 border-gray-300 col-span-1 p-5 rounded-md flex h-full flex-col gap-1'>
             <h1 className='text-[18px] font-bold'>Các bài kiểm tra đã làm của {me.user?.role === "CENTER_MENTOR" ? "học viên" : "bạn"}</h1>
             <div className='flex flex-col gap-1'>
-              {quizzesResult?.map((quiz, index) => (
+              {quizzesResult ? quizzesResult?.map((quiz, index) => (
                 <div onClick={() => handleChooseQuizAttempt(quiz.id)} className='flex flex-col lg:flex-row items-start border border-gray-300 rounded-md py-2 px-4 hover:bg-slate-400/30 cursor-pointer' key={quiz.id + index}>
                   <div className='flex-1'>
                     <div className='flex items-center gap-1'>
@@ -73,7 +73,9 @@ const QuizResults = () => {
                     </span>
                   </div>
                 </div>
-              ))}
+              ))
+                : <p className='text-center'>Bạn chưa có bài kiểm tra nào</p>
+              }
             </div>
           </div>
           <div className='col-span-2 h-full overflow-y-auto'>
