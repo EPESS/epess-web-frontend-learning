@@ -42,7 +42,6 @@ query MeetingRoom ($scheduleDateId:String!) {
                 email
                 id
                 name
-                packageValue
                 phoneNumber
                 role
                 updatedAt

@@ -6,7 +6,7 @@ type TActiveDocument = {
     id: string
     isPublic: boolean
     name: string
-    ownerId: string
+    owner: User
     updatedAt: Date
 }
 
@@ -51,7 +51,17 @@ query CollaborationSession ($scheduleDateId: String!) {
             id
             isPublic
             name
-            ownerId
+            owner {
+                avatarUrl
+                bankAccountNumber
+                bankBin
+                banned
+                createdAt
+                email
+                id
+                name
+                phoneNumber
+            }
             updatedAt
         }
     }

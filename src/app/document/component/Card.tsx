@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ExternalLinkIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { MYDOCUMENT, TDocument, useUpdateDocument } from "@/app/api/document";
 import { cn, getVNTime } from "@/lib/utils";
@@ -49,8 +49,8 @@ export default function Card({ data, classNameCard, classNameContainer }: TCard)
 
   return (
     <Link href={`/document/${data.id}`} target="_blank" className={cn("max-w-56 cursor-pointer", classNameContainer)}>
-      <div className={cn("bg-slate-200 shadow-sm border w-56 h-64", classNameCard)}>
-        {/* documentImage */}
+      <div className={cn("bg-slate-200 shadow-sm border w-56 h-64", !data.previewImage?.fileUrl && "bg-slate-200", classNameCard)}>
+        {data.previewImage && <img className="w-full h-full" src={data.previewImage.fileUrl} alt={`Document-${data.id}`} />}
       </div>
 
       <div className="flex w-full">
@@ -91,10 +91,6 @@ export default function Card({ data, classNameCard, classNameContainer }: TCard)
                       <DropdownMenuItem>
                         <Trash2Icon className="mr-2 w-4 h-4" />
                         Delete
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <ExternalLinkIcon className="mr-2 w-4 h-4" />
-                        Open
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

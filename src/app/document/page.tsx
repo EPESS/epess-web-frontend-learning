@@ -26,7 +26,7 @@ export default function DocumentList() {
         addCollaborator({
           variables: {
             documentId: data.createDocument.id,
-            userId: data.createDocument.ownerId
+            userId: data.createDocument.owner.id
           },
           onError: () => {
             toast("Thêm người dùng lỗi")

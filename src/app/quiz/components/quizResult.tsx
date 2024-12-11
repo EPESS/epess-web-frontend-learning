@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle } from 'lucide-react'
 
-export interface QuizResult {
+export interface Quiz {
     numberOfQuestions: number
     numberOfCorrectAnswers: number
     numberOfIncorrectAnswers: number
@@ -16,7 +16,7 @@ export interface QuizResult {
         questionType: string
         answerSelectionType: string
         answers: string[]
-        correctAnswer: number[] | string
+        correctAnswer: number[]
         explanation: string
         point: string
         questionIndex: number
@@ -27,9 +27,9 @@ export interface QuizResult {
     timeTaken?: number | null
 }
 
-export default function RenderQuizResults({ defaultResult }: { defaultResult: QuizResult }) {
+export default function RenderQuizs({ defaultResult }: { defaultResult: Quiz }) {
 
-    const [result, setDefaultResult] = useState<QuizResult>(defaultResult)
+    const [result, setDefaultResult] = useState<Quiz>(defaultResult)
 
     const [openExplanations, setOpenExplanations] = useState<{ [key: number]: boolean }>({})
 
@@ -77,6 +77,13 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
         }
     }
 
+    const areArraysEqual = (arr1: number[], arr2: number[]) => {
+        const sortedArr1 = [...arr1].sort((a, b) => a - b);
+        const sortedArr2 = [...arr2].sort((a, b) => a - b);
+
+        return JSON.stringify(sortedArr1) === JSON.stringify(sortedArr2);
+    };
+
     useEffect(() => {
         setDefaultResult(defaultResult)
     }, [defaultResult])
@@ -123,7 +130,9 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                             <CardTitle className="flex items-center gap-2">
                                 <span>Câu hỏi {question.questionIndex}</span>
                                 {Array.isArray(result.userInput[index])
-                                    ? JSON.stringify(result.userInput[index]) === JSON.stringify(question.correctAnswer)
+                                    ? areArraysEqual(result.userInput[index], question.correctAnswer)
+                                        ? <CheckCircle className="text-green-500" />
+                                        : <XCircle className="text-red-500" />
                                     : result.userInput[index].toString() === question.correctAnswer.toString()
                                         ? <CheckCircle className="text-green-500" />
                                         : <XCircle className="text-red-500" />
@@ -141,8 +150,8 @@ export default function RenderQuizResults({ defaultResult }: { defaultResult: Qu
                                                 Array.isArray(question.correctAnswer)
                                                     ? question.correctAnswer.includes(ansIndex + 1)
                                                         ? "green"
-                                                        : "destructive"
-                                                    : !isAnswerIncorrect(index, ansIndex + 1) && Number(question.correctAnswer) === ansIndex + 1
+                                                        : "outline"
+                                                    : Number(question.correctAnswer) === ansIndex + 1
                                                         ? "green"
                                                         : "outline"
                                             }

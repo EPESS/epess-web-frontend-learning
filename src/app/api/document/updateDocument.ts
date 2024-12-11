@@ -7,7 +7,7 @@ export type TUpdateDocument = {
         id: string;
         isPublic: boolean;
         name: string;
-        ownerId: string;
+        owner: User;
         updatedAt: string;
     }
 }
@@ -23,7 +23,17 @@ mutation UpdateDocument ($documentId:String!, $name:String) {
         id
         isPublic
         name
-        ownerId
+        owner {
+            avatarUrl
+            bankAccountNumber
+            bankBin
+            banned
+            createdAt
+            email
+            id
+            name
+            phoneNumber
+        }
         updatedAt
     }
 }

@@ -13,7 +13,26 @@ query MyDocuments ($skip:Int, $take:Int) {
         id
         isPublic
         name
-        ownerId
+        previewImage {
+            actualFileName
+            fileName
+            fileType
+            fileUrl
+            id
+            uploadedAt
+            userId
+        }
+        owner {
+            avatarUrl
+            bankAccountNumber
+            bankBin
+            banned
+            createdAt
+            email
+            id
+            name
+            phoneNumber
+        }
         updatedAt
     }
 }

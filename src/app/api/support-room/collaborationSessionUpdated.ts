@@ -6,7 +6,7 @@ type TActiveDocument = {
     id: string;
     isPublic: boolean;
     name: string;
-    ownerId: string;
+    owner: User;
     updatedAt: string;
 }
 
@@ -41,7 +41,17 @@ export const useGetCollaborationSessionUpdated = async (sessionId: string | null
                 id
                 isPublic
                 name
-                ownerId
+                owner {
+                    avatarUrl
+                    bankAccountNumber
+                    bankBin
+                    banned
+                    createdAt
+                    email
+                    id
+                    name
+                    phoneNumber
+                }
                 updatedAt
             }
         }

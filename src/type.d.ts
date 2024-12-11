@@ -6,7 +6,6 @@ declare type User = {
   email: string;
   id: string;
   name: string;
-  packageValue: string | null;
   phoneNumber: string | null;
   role: string;
   updatedAt: string;

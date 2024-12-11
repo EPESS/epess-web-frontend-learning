@@ -72,7 +72,6 @@ mutation EditCollaboratorPermission ($documentId:String!,$readable:Boolean!, $us
             email
             id
             name
-            packageValue
             phoneNumber
             role
             updatedAt

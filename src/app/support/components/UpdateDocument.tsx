@@ -143,10 +143,10 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                 </DialogHeader>
                 <DialogDescription>
                     <span>Chỉ có chủ sở hữu mới được chỉnh sửa !</span>
-                    {data && user?.id === data.document?.ownerId && <p className='text-red-400'>Bạn có thể chỉnh sửa</p>}
+                    {data && user?.id === data.document?.owner.id && <p className='text-red-400'>Bạn có thể chỉnh sửa</p>}
                 </DialogDescription>
                 {
-                    data && user?.id === data.document?.ownerId &&
+                    data && user?.id === data.document?.owner.id &&
                     <div className='flex gap-1 items-center'>
                         <div className='relative w-full'>
                             <Input onClick={() => setShowListEmail(true)} ref={inputRef} onChange={(e) => setEmail(e.target.value)} className='w-full' />
@@ -189,12 +189,12 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                         <span className='text-[15px] font-semibold text-black'>{document.user.name}</span>
                                     </div>
                                     {
-                                        data.document.ownerId === document.user.id
+                                        data.document.owner.id === document.user.id
                                             ?
                                             <span className='text-yellow-500'>Chủ sở hữu</span>
                                             :
                                             <div className='flex gap-1 items-center' >
-                                                {user?.id !== data.document.ownerId ?
+                                                {user?.id !== data.document.owner.id ?
                                                     document.writable ?
                                                         <Button size={"sm"} variant={"outline"}>Chỉnh sửa</Button>
                                                         :
@@ -214,7 +214,7 @@ const UpdateDocumentDialog = ({ documentId }: TUpdateDocument) => {
                                                             <Button size={"sm"} variant={"outline"}>Chỉ đọc</Button>}
                                                     />
                                                 }
-                                                {user?.id === data.document?.ownerId &&
+                                                {user?.id === data.document?.owner.id &&
                                                     <X onClick={() => removeUserToDocument(document.user.id)} className='cursor-pointer w-5 h-5' />
                                                 }
                                             </div>

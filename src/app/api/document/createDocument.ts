@@ -6,9 +6,20 @@ export type TDocument = {
     id: string;
     isPublic: boolean;
     name: string;
-    ownerId: string;
+    owner: User;
     updatedAt: Date;
+    previewImage: TPreviewImage
     collaborators: TCollaborator[]
+}
+
+type TPreviewImage = {
+    actualFileName: string
+    fileName: string
+    fileType: string
+    fileUrl: string
+    id: string
+    uploadedAt: Date
+    userId: string
 }
 
 type CreateDocumentInput = {
@@ -39,7 +50,17 @@ mutation CreateDocument  {
         id
         isPublic
         name
-        ownerId
+        owner {
+            avatarUrl
+            bankAccountNumber
+            bankBin
+            banned
+            createdAt
+            email
+            id
+            name
+            phoneNumber
+        }
         updatedAt
     }
 }
@@ -53,8 +74,18 @@ mutation CreateDocument ($collaborationSessionId: String) {
         id
         isPublic
         name
-        ownerId
         updatedAt
+        owner {
+            avatarUrl
+            bankAccountNumber
+            bankBin
+            banned
+            createdAt
+            email
+            id
+            name
+            phoneNumber
+        }
     }
 }
 `

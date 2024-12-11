@@ -2,10 +2,11 @@
 
 import React from 'react'
 import Quiz from 'react-quiz-component';
-import RenderQuizResults, { QuizResult } from './quizResult';
+import RenderQuizResults from './quizResult';
 import { useSearchParams } from 'next/navigation';
 import { StringListType, useGetQuizzes } from '@/app/api/quiz';
 import ScaleLoader from 'react-spinners/ScaleLoader';
+import { useSubmitQuiz } from '@/app/api/quiz/submitQuiz';
 
 const QuizComponent = () => {
 
@@ -36,6 +37,8 @@ const QuizComponent = () => {
 
     const { loading, data } = useGetQuizzes({ scheduleId, serviceId })
 
+    const [submitQuiz, { loading: loadingSubmit }] = useSubmitQuiz()
+
     const quizzesData = JSON.parse(JSON.stringify(data?.quizzes[0] ?? ""))
 
     const questionsData = quizzesData?.questions?.map((question) => {
@@ -60,14 +63,22 @@ const QuizComponent = () => {
 
     const convertedQuizzesData = { ...quizzesData, questions: questionsData, appLocale }
 
-    const handleReceiveResult = (result: QuizResult) => {
+    const handleReceiveResult = (result: Quiz) => {
         return <RenderQuizResults defaultResult={result} key={result.toString()} />
     }
 
-    const handleComplete = (result: QuizResult) => {
+    const handleComplete = (result: Quiz) => {
+
+        if (loadingSubmit) return
+
         delete result.timeTaken
 
-        console.log(result);
+        submitQuiz({
+            variables: result
+        })
+
+        console.log("result", result);
+
     }
 
     return (
