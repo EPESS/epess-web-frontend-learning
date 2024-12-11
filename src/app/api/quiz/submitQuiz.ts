@@ -1,22 +1,22 @@
-import { Quiz } from "@/app/quiz/components/quizResult";
+import { TQuiz } from "@/app/quiz/components/quizResult";
 import { gql, useMutation } from "@apollo/client";
 import { toast } from "react-toastify";
 
 export type SubmitQuizResponse = {
-    submitQuiz: {
-        correctPoints: number;
-        createdAt: string;
-        id: string;
-        numberOfCorrectAnswers: number;
-        numberOfIncorrectAnswers: number;
-        numberOfQuestions: number;
-        questions: string[];
-        quizId: string;
-        totalPoints: number;
-        updatedAt: string;
-        userId: string;
-        userInput: string[];
-    };
+  submitQuiz: {
+    correctPoints: number;
+    createdAt: string;
+    id: string;
+    numberOfCorrectAnswers: number;
+    numberOfIncorrectAnswers: number;
+    numberOfQuestions: number;
+    questions: string[];
+    quizId: string;
+    totalPoints: number;
+    updatedAt: string;
+    userId: string;
+    userInput: string[];
+  };
 };
 
 
@@ -26,9 +26,10 @@ mutation SubmitQuiz (
         $numberOfCorrectAnswers: Int
         $numberOfIncorrectAnswers: Int
         $numberOfQuestions: Int
-        $questions: [String!]
+        $questions: [Json!]
         $totalPoints: Int
-        $userInput: [String!]
+        $userInput: [Json!]
+        $quizId:String
     )
      {
   submitQuiz(
@@ -40,6 +41,7 @@ mutation SubmitQuiz (
       questions: $questions
       totalPoints: $totalPoints
       userInput: $userInput
+      quiz: { connect: { id: $quizId } }
     }
   ) {
     correctPoints
@@ -59,12 +61,12 @@ mutation SubmitQuiz (
 `
 
 export const useSubmitQuiz = () => {
-    return useMutation<SubmitQuizResponse, Quiz>(SUBMITQUIZ, {
-        onCompleted: () => {
-            toast("Nộp bài thành công. Vui lòng đợi giảng viên tư vấn lộ trình học nhé !")
-        },
-        onError: () => {
-            toast("Nộp bài thất bại. Vui lòng liên hệ nền tảng để biết thêm chi tiết !")
-        }
-    })
+  return useMutation<SubmitQuizResponse, TQuiz>(SUBMITQUIZ, {
+    onCompleted: () => {
+      toast("Nộp bài thành công. Vui lòng đợi giảng viên tư vấn lộ trình học nhé !")
+    },
+    onError: () => {
+      toast("Nộp bài thất bại. Vui lòng liên hệ nền tảng để biết thêm chi tiết !")
+    }
+  })
 }

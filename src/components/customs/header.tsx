@@ -24,7 +24,7 @@ export default function Header({ className }: THeader) {
             <Link href={"/document"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Document của tôi</Link>
             <Link href={"/workshop"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Workshop</Link>
             <Link href={"/interview"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Phỏng vấn</Link>
-            <Link href={"/quiz"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Bài test</Link>
+            <Link href={"/quizResult"} target='_blank' className='cursor-pointer text-[15px] font-semibold'>Kết quả bài test</Link>
           </div>
         </div>
         <div className='flex items-center gap-2'>

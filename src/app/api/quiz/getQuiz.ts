@@ -1,15 +1,15 @@
 import { gql, useQuery } from "@apollo/client";
 
 interface Quiz {
-    createdAt: string;
-    id: string;
-    nrOfQuestions: number;
-    progressBarColor: string;
-    questions: Question[];
-    quizSynopsis: string;
-    quizTitle: string;
-    serviceId: string;
-    updatedAt: string;
+  createdAt: string;
+  id: string;
+  nrOfQuestions: number;
+  progressBarColor: string;
+  questions: Question[];
+  quizSynopsis: string;
+  quizTitle: string;
+  serviceId: string;
+  updatedAt: string;
 }
 
 // export enum IAnswerSelectionType {
@@ -18,39 +18,39 @@ interface Quiz {
 // }
 
 interface Question {
-    answerSelectionType: string;
-    answers: string[];
-    correctAnswer: CorrectAnswer;
-    createdAt: string;
-    explanation: string;
-    id: string;
-    messageForCorrectAnswer: string;
-    messageForIncorrectAnswer: string;
-    point: number;
-    question: string;
-    questionPic: string;
-    questionType: string;
-    quizId: string;
-    updatedAt: string;
+  answerSelectionType: string;
+  answers: string[];
+  correctAnswer: CorrectAnswer;
+  createdAt: string;
+  explanation: string;
+  id: string;
+  messageForCorrectAnswer: string;
+  messageForIncorrectAnswer: string;
+  point: number;
+  question: string;
+  questionPic: string;
+  questionType: string;
+  quizId: string;
+  updatedAt: string;
 }
 
 type CorrectAnswer = StringListType | StringType | string | string[];
 
 export interface StringListType {
-    items: string[];
+  items: string[];
 }
 
 export interface StringType {
-    value: string;
+  value: string;
 }
 
 interface QuizzesResponse {
-    quizzes: Quiz[];
+  quizzes: Quiz[];
 }
 
 interface QuizzesVariables {
-    serviceId: string;
-    scheduleId: string;
+  serviceId: string;
+  scheduleId: string;
 }
 
 const QUIZ = gql`
@@ -78,14 +78,15 @@ query Quizzes($serviceId: String!, $scheduleId: String) {
     }
     quizSynopsis
     quizTitle
+    id
   }
 }`
 
 
 
 export const useGetQuizzes = (input: QuizzesVariables) => {
-    return useQuery<QuizzesResponse>(QUIZ, {
-        variables: input,
-        skip: !input
-    })
+  return useQuery<QuizzesResponse>(QUIZ, {
+    variables: input,
+    skip: !input
+  })
 }

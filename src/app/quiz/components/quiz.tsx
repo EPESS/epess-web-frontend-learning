@@ -1,16 +1,23 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import Quiz from 'react-quiz-component';
-import RenderQuizResults from './quizResult';
-import { useSearchParams } from 'next/navigation';
+import RenderQuizResults, { TQuiz } from './quizResult';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { StringListType, useGetQuizzes } from '@/app/api/quiz';
 import ScaleLoader from 'react-spinners/ScaleLoader';
 import { useSubmitQuiz } from '@/app/api/quiz/submitQuiz';
+import { toast } from 'react-toastify';
+
+export const handleReceiveResult = (result: TQuiz) => {
+    return <RenderQuizResults defaultResult={result} key={result.toString()} />
+}
 
 const QuizComponent = () => {
 
     const params = useSearchParams()
+
+    const router = useRouter()
 
     const scheduleId = params.get("scheduleId") ?? ""
     const serviceId = params.get("serviceId") ?? ""
@@ -63,23 +70,28 @@ const QuizComponent = () => {
 
     const convertedQuizzesData = { ...quizzesData, questions: questionsData, appLocale }
 
-    const handleReceiveResult = (result: Quiz) => {
-        return <RenderQuizResults defaultResult={result} key={result.toString()} />
-    }
-
-    const handleComplete = (result: Quiz) => {
+    const handleComplete = (result: TQuiz) => {
 
         if (loadingSubmit) return
 
         delete result.timeTaken
 
         submitQuiz({
-            variables: result
+            variables: {
+                ...result,
+                quizId: data?.quizzes[0].id ?? "",
+                questions: Object.assign({}, result.questions),
+                userInput: Object.assign({}, result.userInput)
+            }
         })
-
-        console.log("result", result);
-
     }
+
+    useEffect(() => {
+        if (!data) {
+            toast.warning("Không có bài thi vui lòng liên hệ giảng viên để biết thêm chi tiết !")
+            router.push("quizResult")
+        }
+    }, [])
 
     return (
         <div className='border-[5px] min-w-[40vw] max-w-[70vw] min-h-[50vh] max-h-[80%] overflow-y-auto border-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
@@ -87,7 +99,7 @@ const QuizComponent = () => {
                 ?
                 <ScaleLoader className='p-10' />
                 :
-                <Quiz onComplete={handleComplete} quiz={convertedQuizzesData} enableProgressBar={true} showDefaultResult={false} customResultPage={handleReceiveResult} shuffleAnswer={true} shuffle={true} />
+                data && <Quiz onComplete={handleComplete} quiz={convertedQuizzesData} enableProgressBar={true} showDefaultResult={false} customResultPage={handleReceiveResult} shuffleAnswer={true} shuffle={true} />
             }
         </div>
     )

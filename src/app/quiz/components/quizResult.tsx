@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle } from 'lucide-react'
 
-export interface Quiz {
+export interface TQuiz {
     numberOfQuestions: number
     numberOfCorrectAnswers: number
     numberOfIncorrectAnswers: number
@@ -25,11 +25,12 @@ export interface Quiz {
     totalPoints: number
     correctPoints: number
     timeTaken?: number | null
+    quizId: string
 }
 
-export default function RenderQuizs({ defaultResult }: { defaultResult: Quiz }) {
+export default function RenderQuizs({ defaultResult }: { defaultResult: TQuiz }) {
 
-    const [result, setDefaultResult] = useState<Quiz>(defaultResult)
+    const [result, setDefaultResult] = useState<TQuiz>(defaultResult)
 
     const [openExplanations, setOpenExplanations] = useState<{ [key: number]: boolean }>({})
 
@@ -89,7 +90,7 @@ export default function RenderQuizs({ defaultResult }: { defaultResult: Quiz }) 
     }, [defaultResult])
 
     return (
-        result.userInput.length === 0 ? <> </> :
+        result.userInput?.length === 0 ? <> </> :
             <div className="container mx-auto px-4 py-8">
                 <Card className="mb-8">
                     <CardHeader>
@@ -124,7 +125,7 @@ export default function RenderQuizs({ defaultResult }: { defaultResult: Quiz }) 
                 </Card>
 
                 <h2 className="text-2xl font-bold mb-4">Chi tiết các câu hỏi</h2>
-                {result.questions.map((question, index) => (
+                {result.questions?.map((question, index) => (
                     <Card key={question.questionIndex} className="mb-6">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
