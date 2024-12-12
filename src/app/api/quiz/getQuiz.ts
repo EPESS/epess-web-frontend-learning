@@ -44,7 +44,7 @@ export interface StringType {
   value: string;
 }
 
-interface QuizzesResponse {
+export interface QuizzesResponse {
   quizzes: Quiz[];
 }
 

@@ -1,26 +1,16 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React from 'react'
 import Quiz from 'react-quiz-component';
 import RenderQuizResults, { TQuiz } from './quizResult';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { StringListType, useGetQuizzes } from '@/app/api/quiz';
-import ScaleLoader from 'react-spinners/ScaleLoader';
+import { QuizzesResponse, StringListType } from '@/app/api/quiz';
 import { useSubmitQuiz } from '@/app/api/quiz/submitQuiz';
-import { toast } from 'react-toastify';
 
 export const handleReceiveResult = (result: TQuiz) => {
     return <RenderQuizResults defaultResult={result} key={result.toString()} />
 }
 
-const QuizComponent = () => {
-
-    const params = useSearchParams()
-
-    const router = useRouter()
-
-    const scheduleId = params.get("scheduleId") ?? ""
-    const serviceId = params.get("serviceId") ?? ""
+const QuizComponent = ({ data }: { data: QuizzesResponse | undefined }) => {
 
     const appLocale = {
         "landingHeaderText": "<questionLength> câu hỏi",
@@ -42,7 +32,6 @@ const QuizComponent = () => {
         "resultPageHeaderText": "Bạn đã hoàn thành xong bài test. Bạn đạt được <correctIndexLength> trên <questionLength> câu hỏi."
     }
 
-    const { loading, data } = useGetQuizzes({ scheduleId, serviceId })
 
     const [submitQuiz, { loading: loadingSubmit }] = useSubmitQuiz()
 
@@ -86,21 +75,11 @@ const QuizComponent = () => {
         })
     }
 
-    useEffect(() => {
-        if (!data) {
-            toast.warning("Không có bài thi vui lòng liên hệ giảng viên để biết thêm chi tiết !")
-            router.push("quizResult")
-        }
-    }, [])
+
 
     return (
         <div className='border-[5px] min-w-[40vw] max-w-[70vw] min-h-[50vh] max-h-[80%] overflow-y-auto border-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-            {loading
-                ?
-                <ScaleLoader className='p-10' />
-                :
-                data && <Quiz onComplete={handleComplete} quiz={convertedQuizzesData} enableProgressBar={true} showDefaultResult={false} customResultPage={handleReceiveResult} shuffleAnswer={true} shuffle={true} />
-            }
+            <Quiz onComplete={handleComplete} quiz={convertedQuizzesData} enableProgressBar={true} showDefaultResult={false} customResultPage={handleReceiveResult} shuffleAnswer={true} shuffle={true} />
         </div>
     )
 }
