@@ -210,6 +210,10 @@ h2 a {
 
 .display-toolbar{
   display: block !important;
+  position: sticky;
+  top: 0px;
+  z-index: 100;
+  background-color: whitesmoke;
 }
 
 .display-none-toolbar{
