@@ -26,6 +26,7 @@ export interface TQuiz {
     correctPoints: number
     timeTaken?: number | null
     quizId: string
+    scheduleId: string
 }
 
 export default function RenderQuizs({ defaultResult }: { defaultResult: TQuiz }) {

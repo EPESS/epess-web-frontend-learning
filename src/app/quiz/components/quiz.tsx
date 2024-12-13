@@ -10,7 +10,7 @@ export const handleReceiveResult = (result: TQuiz) => {
     return <RenderQuizResults defaultResult={result} key={result.toString()} />
 }
 
-const QuizComponent = ({ data }: { data: QuizzesResponse | undefined }) => {
+const QuizComponent = ({ data, scheduleId }: { data: QuizzesResponse | undefined, scheduleId: string | undefined }) => {
 
     const appLocale = {
         "landingHeaderText": "<questionLength> câu hỏi",
@@ -69,6 +69,7 @@ const QuizComponent = ({ data }: { data: QuizzesResponse | undefined }) => {
             variables: {
                 ...result,
                 quizId: data?.quizzes[0].id ?? "",
+                scheduleId: scheduleId ?? "",
                 questions: Object.assign({}, result.questions),
                 userInput: Object.assign({}, result.userInput)
             }

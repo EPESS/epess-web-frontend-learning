@@ -30,6 +30,7 @@ mutation SubmitQuiz (
         $totalPoints: Int
         $userInput: [Json!]
         $quizId:String
+        $scheduleId:String
     )
      {
   submitQuiz(
@@ -41,6 +42,11 @@ mutation SubmitQuiz (
       questions: $questions
       totalPoints: $totalPoints
       userInput: $userInput
+      schedule: {
+        connect: {
+          id: $scheduleId
+        }
+      },
       quiz: { connect: { id: $quizId } }
     }
   ) {
