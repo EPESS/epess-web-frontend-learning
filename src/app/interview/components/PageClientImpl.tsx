@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/customs/header';
 import Loading from '@/components/customs/loading';
 import { useMe } from '@/hooks/use-me';
 import { RecordingIndicator } from '@/lib/RecordingIndicator';
@@ -39,16 +38,18 @@ import { ControlBar } from './ControlBar';
 import { FocusLayout, FocusLayoutContainer } from './FocusLayout';
 
 declare const window: Window | undefined;
-const CONN_DETAILS_ENDPOINT = '/api/connection-details';
+const CONN_DETAILS_ENDPOINT = '/api/interview-connection-details';
 
 export function PageClientImpl(props: {
-  roomName: string;
+  scheduleIdData: string;
   hq: boolean;
   codec: VideoCodec;
 }) {
   const { user, userLoading } = useMe();
 
-  const [roomId, setRoomId] = useState<string | undefined>(props.roomName);
+  const [scheduleId, setScheduleId] = useState<string | undefined>(
+    props.scheduleIdData
+  );
 
   const [preJoinChoices, setPreJoinChoices] = React.useState<
     LocalUserChoices | undefined
@@ -64,16 +65,30 @@ export function PageClientImpl(props: {
 
   const handlePreJoinSubmit = React.useCallback(
     async (values: LocalUserChoices) => {
-      console.log(values);
-      setPreJoinChoices(values);
-      const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
-      url.searchParams.append('roomName', props.roomName);
-      url.searchParams.append('participantName', values.username);
-      const connectionDetailsResp = await fetch(url.toString());
-      const connectionDetailsData = await connectionDetailsResp.json();
-      setConnectionDetails(connectionDetailsData);
+      try {
+        setPreJoinChoices(values);
+        const url = new URL(CONN_DETAILS_ENDPOINT, window?.location.origin);
+        url.searchParams.append('scheduleId', scheduleId ?? '');
+        url.searchParams.append('name', user?.name ?? '');
+        const connectionDetailsResp = await fetch(url.toString());
+        const connectionDetailsData = await connectionDetailsResp.json();
+        if (connectionDetailsData.error) {
+          throw new Error(connectionDetailsData.message);
+        }
+        setConnectionDetails(connectionDetailsData);
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message == 'room not found') {
+            toast.error('Phòng phỏng vấn không tồn tại', {
+              theme: 'colored',
+            });
+          }
+        } else {
+          console.log(error);
+        }
+      }
     },
-    [props.roomName]
+    [scheduleId, user?.name]
   );
   const handlePreJoinError = React.useCallback((e: Error) => {
     console.error(e);
@@ -131,13 +146,12 @@ export function PageClientImpl(props: {
       <main data-lk-theme='default' style={{ height: '100vh' }}>
         {connectionDetails === undefined || preJoinChoices === undefined ? (
           <>
-            <Header />
             <div
               style={{ display: 'grid', placeItems: 'center', height: '100%' }}
             >
               <PreJoin
-                roomId={roomId}
-                setRoomId={setRoomId}
+                scheduleId={scheduleId}
+                setScheduleId={setScheduleId}
                 imgPlaceholder={user.avatarUrl ?? ''}
                 defaults={preJoinDefaults}
                 onSubmit={handlePreJoinSubmit}
@@ -224,9 +238,12 @@ function VideoConferenceComponent(props: {
       return;
     }
     console.error(e);
-    toast.error(`Gặp lỗi không mong muốn: ${e.message}`, {
-      theme: 'colored',
-    });
+    toast.error(
+      `Gặp lỗi không mong muốn: ${e.message === 'Permission denied' ? 'Không có quyền truy cập thiết bị' : e.message}`,
+      {
+        theme: 'colored',
+      }
+    );
   }, []);
 
   return (

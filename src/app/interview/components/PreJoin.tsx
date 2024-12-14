@@ -44,8 +44,8 @@ export interface PreJoinProps
   /** Prefill the input form with initial values. */
   defaults?: Partial<LocalUserChoices>;
   /** Display a debug window for your convenience. */
-  roomId?: string;
-  setRoomId?: (roomId: string) => void;
+  scheduleId?: string;
+  setScheduleId?: (scheduleId: string) => void;
   debug?: boolean;
   joinLabel?: string;
   micLabel?: string;
@@ -236,8 +236,8 @@ export function usePreviewDevice<T extends LocalVideoTrack | LocalAudioTrack>(
  * @public
  */
 export function PreJoin({
-  roomId,
-  setRoomId,
+  scheduleId,
+  setScheduleId,
   defaults = {},
   onValidate,
   onSubmit,
@@ -507,9 +507,9 @@ export function PreJoin({
             id='roomData'
             name='roomData'
             type='text'
-            defaultValue={roomId}
+            defaultValue={scheduleId}
             placeholder='Nhập mã phòng'
-            onChange={(inputEl) => setRoomId?.(inputEl.target.value)}
+            onChange={(inputEl) => setScheduleId?.(inputEl.target.value)}
             autoComplete='off'
           />
         </div>
@@ -517,7 +517,7 @@ export function PreJoin({
           className='lk-button lk-join-button'
           type='submit'
           onClick={handleSubmit}
-          disabled={!isValid || !roomId || isLoading}
+          disabled={!isValid || !scheduleId || isLoading}
         >
           {isLoading ? (
             <div className='flex items-center gap-2'>

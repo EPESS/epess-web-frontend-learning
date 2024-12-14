@@ -174,12 +174,7 @@ export const ParticipantTile: (
                     className='select-none aspect-square w-[100%] h-[100%]'
                   >
                     <AvatarImage
-                      src={
-                        trackReference.participant.metadata
-                          ? JSON.parse(trackReference.participant.metadata)
-                              .avatarUrl
-                          : ''
-                      }
+                      src={trackReference.participant.metadata}
                       alt='Participant'
                     />
                     <AvatarFallback>
