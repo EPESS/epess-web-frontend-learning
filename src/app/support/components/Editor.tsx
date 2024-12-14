@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import { clientWS as createClientWS, createApolloClient } from '@/providers/apolloClient'
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import DeltaQueue from './EditorClass/DeltaQueue';
 import { GLOBAL_MARGIN, PageConfiguration } from './EditorClass';
 import PageManager, { PAGE_SIZES } from './EditorClass/PageManagerClass';
