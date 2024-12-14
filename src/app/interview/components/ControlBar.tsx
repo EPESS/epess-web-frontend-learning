@@ -3,8 +3,12 @@ import * as React from 'react';
 import { MediaDeviceMenu } from '@livekit/components-react';
 import { DisconnectButton } from '@livekit/components-react';
 import { TrackToggle } from '@livekit/components-react';
-import { ChatIcon, GearIcon, LeaveIcon } from '@livekit/components-react';
-import { ChatToggle } from '@livekit/components-react';
+import {
+  // ChatIcon,
+  GearIcon,
+  LeaveIcon,
+} from '@livekit/components-react';
+// import { ChatToggle } from '@livekit/components-react';
 import {
   useLocalParticipantPermissions,
   usePersistentUserChoices,
@@ -204,12 +208,12 @@ export function ControlBar({
               {showText && (isScreenShareEnabled ? 'Dừng chia sẻ' : 'Màn hình')}
             </TrackToggle>
           )}
-          {visibleControls.chat && (
+          {/* {visibleControls.chat && (
             <ChatToggle>
               {showIcon && <ChatIcon />}
               {showText && 'Tin nhắn'}
             </ChatToggle>
-          )}
+          )} */}
           {visibleControls.settings && (
             <SettingsMenuToggle>
               {showIcon && <GearIcon />}
@@ -305,12 +309,12 @@ export function ControlBar({
                   {isScreenShareEnabled ? 'Dừng chia sẻ' : 'Màn hình'}
                 </TrackToggle>
               )}
-              {visibleControls.chat && (
+              {/* {visibleControls.chat && (
                 <ChatToggle className='!bg-zinc-800'>
                   <ChatIcon />
                   Tin nhắn
                 </ChatToggle>
-              )}
+              )} */}
               {visibleControls.settings && (
                 <SettingsMenuToggle className='!bg-zinc-800'>
                   <GearIcon />
