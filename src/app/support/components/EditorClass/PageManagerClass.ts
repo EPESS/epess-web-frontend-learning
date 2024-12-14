@@ -163,7 +163,7 @@ export default class PageManager {
   public sessionId: string = '';
   public isReadOnly: boolean = false;
   public timeoutId: NodeJS.Timeout | null = null;
-  public isSaveLoading: (value: boolean) => void = () => { };
+  public isSaveLoading: (value: boolean) => void = () => {};
   public quillCursors: QuillCursors | null = null;
 
   constructor(
@@ -177,7 +177,6 @@ export default class PageManager {
     clientWS: Client,
     deltaQueue: DeltaQueue,
     isSaveLoading: (value: boolean) => void
-
   ) {
     // initialize config
     this.isReadOnly = isReadOnly;
@@ -193,13 +192,13 @@ export default class PageManager {
     this.documentId = docID;
     this.registerEventListener();
     this.subscribeDocument(docID);
-    this.isSaveLoading = isSaveLoading
-    this.quillCursors = new QuillCursors(quill)
+    this.isSaveLoading = isSaveLoading;
+    this.quillCursors = new QuillCursors(quill);
     // this.deltaManager = new DeltaManager(quill.getContents());
   }
 
   handleIsSaveLoading(value: boolean) {
-    this.isSaveLoading(value)
+    this.isSaveLoading(value);
   }
 
   get currentPageIndex() {
@@ -223,7 +222,7 @@ export default class PageManager {
         senderId: string;
         requestSync: boolean;
         delta: string;
-        eventType: string
+        eventType: string;
         documentId: string;
         pageIndex: number;
       };
@@ -242,9 +241,9 @@ export default class PageManager {
     })) {
       if (
         result?.data?.document &&
-        result?.data?.document.senderId !== this.userId && result?.data?.document.senderId !== "system"
+        result?.data?.document.senderId !== this.userId &&
+        result?.data?.document.senderId !== 'system'
       ) {
-        // this.pages[result?.data?.document?.pageIndex].updateContents(JSON.parse(result.data?.document.delta), QuillWrapper.sources.SILENT);
         this.applyDelta(
           JSON.parse(result.data?.document.delta),
           result?.data?.document?.pageIndex,
@@ -252,21 +251,46 @@ export default class PageManager {
         );
       }
 
-      if (result?.data?.document?.eventType === "document_ai_suggestion") {
-        console.log("document_ai_suggestion", result);
-        // const newContentAI = new Delta((JSON.parse(result?.data?.document?.delta) as Delta).ops)
-        // const content = this.gotoPage(result?.data?.document?.pageIndex).getContents()
-        // const temp = content.diff(newContentAI)
-        // const newContent = newContentAI.insert(temp.)
+      if (result?.data?.document?.eventType === 'document_ai_suggestion') {
+        console.log('document_ai_suggestion', result);
 
-        // if (newContentAI.ops[0].attributes && newContentAI.ops[0]?.attributes['ai-suggestion'] === true) {
-        //   if (typeof newContentAI.ops[0].insert !== 'string') return
-        //   const corrected = new Delta().insert(newContentAI.ops[0]?.attributes['corrected'] as string)
-        //   const original = new Delta().insert(newContentAI.ops[0].insert)
-        //   const diff = original.diff(corrected)
-        //   const currentContent = this.removeLastOps(diff)
-        //   // handle tool tip display
-        // }
+        try {
+          const pageIndex = result?.data?.document?.pageIndex;
+          const currentPage = this.gotoPage(pageIndex);
+          const aiSuggestionDelta = JSON.parse(
+            result?.data?.document?.delta
+          ) as Delta;
+          if (
+            aiSuggestionDelta.ops[0]?.attributes?.['ai-suggestion'] === true
+          ) {
+            // Ensure the insert is a string
+            if (typeof aiSuggestionDelta.ops[0].insert !== 'string') return;
+
+            const originalText = aiSuggestionDelta.ops[0].insert;
+            const correctedText = aiSuggestionDelta.ops[0]?.attributes?.[
+              'corrected'
+            ] as string;
+
+            if (!correctedText) return;
+
+            // Create deltas for original and corrected text
+            const originalDelta = new Delta().insert(originalText);
+            const correctedDelta = new Delta().insert(correctedText);
+
+            // Calculate the difference
+            const diff = originalDelta.diff(correctedDelta);
+
+            // Display tooltip with AI suggestion
+            this.showAISuggestionTooltip({
+              originalText,
+              correctedText,
+              pageIndex,
+              diff,
+            });
+          }
+        } catch (error) {
+          console.error('Error processing AI suggestion:', error);
+        }
       }
 
       if (result?.data?.document?.requestSync) {
@@ -276,22 +300,21 @@ export default class PageManager {
           result?.data?.document?.pageIndex
         ).getContents();
         if (delta) {
-          this.handleIsSaveLoading(true)
+          this.handleIsSaveLoading(true);
           useGetEventDocumentServerRequestSync(
             this.sessionId,
             JSON.stringify(delta),
             this.documentId,
             result?.data?.document?.pageIndex
-          )
+          );
         }
-        this.handleIsSaveLoading(false)
+        this.handleIsSaveLoading(false);
       }
     }
   };
 
-
   removeLastOps(delta: Delta) {
-    return delta.ops.slice(0, delta.ops.length - 1)
+    return delta.ops.slice(0, delta.ops.length - 1);
   }
 
   static newQuill(container: HTMLElement, isReadOnly: boolean) {
@@ -299,7 +322,7 @@ export default class PageManager {
       readOnly: isReadOnly,
       modules: {
         toolbar: toolbarOptions,
-        cursors: true
+        cursors: true,
       },
       placeholder: 'Type here...',
       theme: 'snow',
@@ -388,7 +411,6 @@ export default class PageManager {
     const listUnsavedPage = this.pages.filter((page) => !page.saved);
     // descrease image quality
     if (listUnsavedPage.length) {
-
       // create canvas for document
       html2canvas(this.pages[0].root, {
         scale: 0.5,
@@ -424,7 +446,7 @@ export default class PageManager {
 
       // save document
       try {
-        this.handleIsSaveLoading(true)
+        this.handleIsSaveLoading(true);
         await Promise.all(
           listUnsavedPage.map(async (page) => {
             try {
@@ -434,8 +456,7 @@ export default class PageManager {
                 this.documentId,
                 Number(page.container.id.split('-')[1])
               );
-              this.pages[Number(page.container.id.split('-')[1])].saved =
-                true;
+              this.pages[Number(page.container.id.split('-')[1])].saved = true;
             } catch (err: any) {
               // Collect all errors
               errors.push(
@@ -452,7 +473,7 @@ export default class PageManager {
       } catch {
         toast.error('Có lỗi xảy ra trong quá trình cập nhật.');
       } finally {
-        this.handleIsSaveLoading(false)
+        this.handleIsSaveLoading(false);
         updateLoading = false;
       }
     }
@@ -462,7 +483,7 @@ export default class PageManager {
     document.addEventListener('keydown', async (e) => {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
-        await this.savePage()
+        await this.savePage();
       }
     });
   }
@@ -517,7 +538,6 @@ export default class PageManager {
   //     return this.nextPage();
   // }
 
-
   previousPage() {
     if (this.currentPageIndex - 1 >= 0) {
       return this.pages[this.currentPageIndex - 1];
@@ -541,14 +561,12 @@ export default class PageManager {
   }
 
   registerWithQuill() {
-    return new QuillCursors(this.getCurrentPage())
+    return new QuillCursors(this.getCurrentPage());
   }
 
   pushToPageList(page: QuillWrapper) {
-    let tooltip = document.createElement('div');
     // Initialize QuillCursors
     // const quillCursors = new QuillCursors(page);
-
 
     page.root.addEventListener('focus', () => {
       if (this.currentPageIndex !== this.pages.indexOf(page)) {
@@ -571,13 +589,13 @@ export default class PageManager {
 
       this.debounce(async () => {
         try {
-          this.handleIsSaveLoading(true)
-          await this.savePage()
-          this.handleIsSaveLoading(false)
+          this.handleIsSaveLoading(true);
+          await this.savePage();
+          this.handleIsSaveLoading(false);
         } catch (error) {
-          toast(`Error: ${error}`)
+          toast(`Error: ${error}`);
         }
-      }, 2000)
+      }, 2000);
 
       // if (page.container.id !== 'page-0' && page.getLength() === 1) {
       //   console.log('delete page');
@@ -586,8 +604,6 @@ export default class PageManager {
       // }
 
       // send text change to AI
-
-
 
       page.saved = false;
 
@@ -599,12 +615,6 @@ export default class PageManager {
     });
 
     page.on(EVENT_NAMES.EDITOR_CHANGE, () => {
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' || e.key === 'Delete') {
-          tooltip.style.display = 'none';
-        }
-      });
-
       // Check if the current page is overflowing
       if (PageManager.isPageOverflowing(page)) {
         console.log('page is overflowing');
@@ -617,45 +627,21 @@ export default class PageManager {
         `#page-${this.currentPageIndex} .ql-editor`
       );
       if (!editor) return;
-      let editorOffset = editor?.getBoundingClientRect();
 
       if (range) {
-        tooltip.style.maxWidth = '700px';
-        tooltip.style.minWidth = '300px';
-        tooltip.style.maxHeight = '170px';
-        tooltip.style.overflowY = 'auto';
-        tooltip.style.zIndex = '100';
-        tooltip.style.whiteSpace = 'normal';
-        tooltip.style.wordBreak = 'break-word';
-        tooltip.id = 'tooltip';
-        tooltip.style.display = 'none';
-        tooltip.style.position = 'absolute';
-        document.body.appendChild(tooltip);
-
         if (this.quillCursors) {
-          this.quillCursors.createCursor(this.sessionId, this.userName, "blue"); // Create cursor with ID "123", name "Khoi", and color "red"
+          this.quillCursors.createCursor(this.sessionId, this.userName, 'blue'); // Create cursor with ID "123", name "Khoi", and color "red"
           this.quillCursors.moveCursor(this.sessionId, range); // Move cursor to position (example: start of the editor)
         }
 
         if (range.length == 0) {
-          // quillCursors.removeCursor(this.sessionId)
-          tooltip.style.display = 'none';
+          this.quillCursors?.removeCursor(this.sessionId);
         } else {
           const text = this.getCurrentPage().getText(range.index, range.length);
-          let bounds = this.getCurrentPage().getBounds(range);
-
-          if (bounds) {
-            tooltip.innerText = `${text}`;
-            tooltip.style.display = 'block';
-            tooltip.style.position = 'absolute';
-            tooltip.style.top = `${editorOffset.top + bounds.top - tooltip.offsetHeight - 5}px`;
-            tooltip.style.left = `${editorOffset.left + bounds.left + 5}px`;
-            tooltip.style.height = 'auto';
-          }
+          console.log('text', text);
         }
       } else {
-        tooltip.style.display = 'none'; // Ban đầu ẩn đi
-        this.quillCursors?.removeCursor(this.sessionId)
+        this.quillCursors?.removeCursor(this.sessionId);
         console.log('Cursor not in the editor');
       }
     });
@@ -717,13 +703,12 @@ export default class PageManager {
     if (!this.quillCursors) {
       this.quillCursors = new QuillCursors(this.getCurrentPage());
     } else {
-      this.quillCursors.removeCursor(this.sessionId)
-      this.quillCursors = null
+      this.quillCursors.removeCursor(this.sessionId);
+      this.quillCursors = null;
       this.quillCursors = new QuillCursors(this.getCurrentPage());
       // this.quillCursors.moveCursor(this.sessionId, range)
       // this.registerWithQuill();
     }
-
   }
 
   attachToolbarToPage(indexToolbar: number) {
@@ -732,8 +717,8 @@ export default class PageManager {
     if (!this.quillCursors) {
       this.quillCursors = new QuillCursors(this.getCurrentPage());
     } else {
-      this.quillCursors.removeCursor(this.sessionId)
-      this.quillCursors = null
+      this.quillCursors.removeCursor(this.sessionId);
+      this.quillCursors = null;
       this.quillCursors = new QuillCursors(this.gotoPage(indexToolbar));
       // this.quillCursors.moveCursor(this.sessionId, range)
       // this.registerWithQuill();
@@ -748,7 +733,6 @@ export default class PageManager {
         toolbar.classList.add('display-none-toolbar');
       }
     });
-
   }
 
   // focusToPage(index: number) {
@@ -770,5 +754,114 @@ export default class PageManager {
       func();
       this.timeoutId = null; // Clear timeout ID after execution
     }, delay);
+  }
+
+  // New method to show AI suggestion tooltip
+  private showAISuggestionTooltip(params: {
+    originalText: string;
+    correctedText: string;
+    pageIndex: number;
+    diff: Delta;
+  }) {
+    const { originalText, correctedText, pageIndex, diff } = params;
+
+    // Create a tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.className = 'ai-suggestion-tooltip';
+    tooltip.innerHTML = `
+      <div class="ai-suggestion-tooltip-container">
+        <div class="ai-suggestion-header">
+          <span class="ai-icon">��</span>
+          AI Suggestion
+        </div>
+        <div class="ai-suggestion-content">
+          <div class="original">
+            <span class="label">Original:</span> 
+            <span class="text">${originalText}</span>
+          </div>
+          <div class="corrected">
+            <span class="label">Suggested:</span> 
+            <span class="text">${correctedText}</span>
+          </div>
+        </div>
+        <div class="ai-suggestion-actions">
+          <button class="accept-suggestion btn-primary">
+            <span>✓</span> Accept
+          </button>
+          <button class="reject-suggestion btn-secondary">
+            <span>✗</span> Reject
+          </button>
+        </div>
+      </div>
+    `;
+    tooltip.style.position = 'absolute';
+    tooltip.style.top = '0';
+    tooltip.style.left = '0';
+
+    // Position the tooltip near the text
+    const page = document.getElementById(`page-${pageIndex}`);
+    if (!page) return;
+
+    // Add event listeners for accept/reject
+    const acceptButton = tooltip.querySelector('.accept-suggestion');
+    const rejectButton = tooltip.querySelector('.reject-suggestion');
+
+    acceptButton?.addEventListener('click', () => {
+      this.applyAISuggestion(pageIndex, originalText, correctedText, diff);
+      tooltip.remove();
+    });
+
+    rejectButton?.addEventListener('click', () => {
+      tooltip.remove();
+    });
+
+    // Append tooltip to the page
+    page.appendChild(tooltip);
+  }
+
+  // Updated method to apply AI suggestion with diff highlighting
+  private applyAISuggestion(
+    pageIndex: number,
+    originalText: string,
+    correctedText: string,
+    diff: Delta
+  ) {
+    const page = this.gotoPage(pageIndex);
+
+    // Find the index of the original text
+    const content = page.getContents();
+    const index = content.ops.findIndex(
+      (op) => typeof op.insert === 'string' && op.insert === originalText
+    );
+
+    if (index !== -1) {
+      // Calculate the starting position of the original text
+      const startPosition = content.ops
+        .slice(0, index)
+        .reduce(
+          (acc, op) =>
+            acc + (typeof op.insert === 'string' ? op.insert.length : 1),
+          0
+        );
+
+      // Replace the original text with the corrected text
+      page.updateContents(
+        new Delta()
+          .retain(startPosition)
+          .delete(originalText.length)
+          .insert(correctedText, { 'ai-highlight': true }),
+        QuillWrapper.sources.USER
+      );
+
+      // Add CSS for AI highlight
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .ql-editor .ai-highlight {
+          background-color: yellow;
+          text-decoration: underline wavy green;
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }
 }
