@@ -5,17 +5,19 @@ import { Button } from '../ui/button'
 import { DOCUMENT, useGetDocument, useUpdateDocument } from '@/app/api/document'
 import { toast } from 'react-toastify'
 import ScaleLoader from 'react-spinners/ScaleLoader'
-import { Edit, Eye } from 'lucide-react'
+import { Edit, Eye, RotateCcw } from 'lucide-react'
 import UpdateDocumentDialog from '@/app/support/components/UpdateDocument'
 import { Badge } from '../ui/badge'
 import { useUser } from '@clerk/nextjs'
+import { cn } from '@/lib/utils'
 
 type TToolbarHeader = {
     documentId: string
     handleEvent: (value: string) => void
+    isSaveLoading?: boolean
 }
 
-const ToolbarHeader = ({ documentId, handleEvent }: TToolbarHeader) => {
+const ToolbarHeader = ({ documentId, handleEvent, isSaveLoading }: TToolbarHeader) => {
 
     const { user } = useUser()
 
@@ -58,6 +60,10 @@ const ToolbarHeader = ({ documentId, handleEvent }: TToolbarHeader) => {
                             </div>
                             <div>
                                 <UpdateDocumentDialog documentId={documentId} />
+                            </div>
+                            <div className='flex items-center gap-1'>
+                                <RotateCcw className={cn("w-4 h-4", isSaveLoading && "animate-spin	")} />
+                                {isSaveLoading ? "Đang lưu" : "Đã lưu"}
                             </div>
                         </div>
                     </div>

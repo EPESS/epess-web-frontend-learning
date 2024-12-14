@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import { clientWS as createClientWS, createApolloClient } from '@/providers/apolloClient'
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import DeltaQueue from './EditorClass/DeltaQueue';
 import { GLOBAL_MARGIN, PageConfiguration } from './EditorClass';
 import PageManager, { PAGE_SIZES } from './EditorClass/PageManagerClass';
@@ -36,6 +36,8 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
   const { data: documentData, loading: documentLoading, fetchMore } = useGetEventDocumentClientRequestSync(documentId, page)
 
   const [renderOneTime, setRenderOneTime] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
+
 
   useEffect(() => {
     if (documentData) {
@@ -49,6 +51,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
   const documentLoadingRef = useRef<boolean>(documentLoading)
 
   const { userId, sessionId } = useAuth();
+  const { user } = useUser()
 
   const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
   const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
@@ -91,6 +94,10 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
     }
   };
 
+  const handleIsSaveLoading = (value: boolean) => {
+    setSaveLoading(value)
+  }
+
 
   useEffect(() => {
     documentLoadingRef.current = documentLoading
@@ -106,11 +113,13 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
         isReadOnly,
         sessionId ?? "",
         userId ?? "",
+        user?.fullName ?? "",
         documentId ?? "",
         PageManager.newQuill(pageElement.current, isReadOnly),
         clientHTTP,
         clientWS,
-        deltaQueue
+        deltaQueue,
+        handleIsSaveLoading
       );
     }
   }, [pageElement, sessionId, userId, documentId, clientHTTP, clientWS, deltaQueue, isReadOnly]);
@@ -154,7 +163,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
       <div className='relative flex flex-col w-full h-screen max-h-screen'>
         {/* tool bar */}
         <div className='flex flex-col'>
-          <ToolbarHeader documentId={documentId} handleEvent={handleFileEvent} />
+          <ToolbarHeader isSaveLoading={saveLoading} documentId={documentId} handleEvent={handleFileEvent} />
         </div>
 
         {/* maintain min height equal to page size * 1.5 */}

@@ -36,7 +36,7 @@ mutation EventDocumentServerRequestSync ($delta:Delta, $documentId:String, $page
 }
 `
 
-export const useGetEventDocumentServerRequestSync = (
+export const useGetEventDocumentServerRequestSync = async (
     sessionId: string,
     delta: any,
     documentId: string,

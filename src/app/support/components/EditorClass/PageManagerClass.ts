@@ -10,6 +10,7 @@ import html2canvas from 'html2canvas';
 import { randomString } from '@/lib/client-utils';
 import { useUploadPreviewImgDoc } from '@/app/api/document/uploadPreviewImgDoc';
 import { useUpdateDocumentPreviewImage } from '@/app/api/document/updateDocumentPreviewImage';
+import QuillCursors from 'quill-cursors';
 
 export enum EVENT_NAMES {
   TEXT_CHANGE = 'text-change',
@@ -144,6 +145,16 @@ class QuillWrapper extends Quill {
   saved: boolean = true;
 }
 
+const COLOR_PALETTE = [
+  '#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#33FFF6', '#F6FF33', '#A133FF', '#FFB833', '#33FFB8', '#FF3333',
+  '#33A1FF', '#FFD433', '#A8FF33', '#FF33F6', '#3375FF', '#FF8C33', '#33FFA8', '#8C33FF', '#FFC533', '#75FF33',
+  '#FF69B4', '#FFD700', '#00FFFF', '#800080', '#FF4500', '#00FA9A', '#FF6347', '#4682B4', '#ADFF2F', '#1E90FF',
+  '#FF1493', '#7FFF00', '#FF7F50', '#87CEEB', '#9400D3', '#3CB371', '#FFDAB9', '#EE82EE', '#40E0D0', '#B22222',
+  '#00FF7F', '#6495ED', '#DC143C', '#FFA07A', '#7B68EE', '#FFA500', '#FFDEAD', '#2E8B57', '#8A2BE2', '#FF00FF',
+];
+
+Quill.register('modules/cursors', QuillCursors);
+
 export default class PageManager {
   public config: PageConfiguration;
   private QuillWrapper: typeof QuillWrapper;
@@ -156,8 +167,48 @@ export default class PageManager {
   public deltaQueue: DeltaQueue;
   public documentId: string = '';
   public userId: string = '';
+  public userName: string = '';
   public sessionId: string = '';
   public isReadOnly: boolean = false;
+  public timeoutId: NodeJS.Timeout | null = null;
+  public isSaveLoading: (value: boolean) => void = () => { };
+  public quillCursors: QuillCursors | null = null;
+
+  constructor(
+    isReadOnly: boolean,
+    sessionId: string,
+    userId: string,
+    userName: string,
+    docID: string,
+    quill: QuillWrapper,
+    clientHTTP: ApolloClient<any>,
+    clientWS: Client,
+    deltaQueue: DeltaQueue,
+    isSaveLoading: (value: boolean) => void
+
+  ) {
+    // initialize config
+    this.isReadOnly = isReadOnly;
+    this.sessionId = sessionId;
+    this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
+    this.QuillWrapper = QuillWrapper; // QuillWrapper class
+    this.pushToPageList(quill);
+    this.clientHTTP = clientHTTP;
+    this.clientWS = clientWS;
+    this.userId = userId;
+    this.userName = userName;
+    this.deltaQueue = deltaQueue;
+    this.documentId = docID;
+    this.registerEventListener();
+    this.subscribeDocument(docID);
+    this.isSaveLoading = isSaveLoading
+    this.quillCursors = new QuillCursors(quill)
+    // this.deltaManager = new DeltaManager(quill.getContents());
+  }
+
+  handleIsSaveLoading(value: boolean) {
+    this.isSaveLoading(value)
+  }
 
   get currentPageIndex() {
     return this._currentPageIndex;
@@ -180,6 +231,7 @@ export default class PageManager {
         senderId: string;
         requestSync: boolean;
         delta: string;
+        eventType: string
         documentId: string;
         pageIndex: number;
       };
@@ -208,6 +260,15 @@ export default class PageManager {
         );
       }
 
+      if (result?.data?.document?.eventType === "document_ai_suggestion") {
+        console.log("document_ai_suggestion");
+        const newContentAI = JSON.parse(result?.data?.document?.delta)
+        // const content = this.gotoPage(result?.data?.document?.pageIndex).getContents().compose(newContentAI)
+        this.gotoPage(result?.data?.document?.pageIndex).setContents(newContentAI, "silent")
+
+        this.gotoPage(result?.data?.document?.pageIndex).saved = false
+      }
+
       if (result?.data?.document?.requestSync) {
         console.log('meow meow');
 
@@ -215,47 +276,26 @@ export default class PageManager {
           result?.data?.document?.pageIndex
         ).getContents();
         if (delta) {
-          await useGetEventDocumentServerRequestSync(
+          this.handleIsSaveLoading(true)
+          useGetEventDocumentServerRequestSync(
             this.sessionId,
             JSON.stringify(delta),
             this.documentId,
             result?.data?.document?.pageIndex
-          );
+          )
         }
+        this.handleIsSaveLoading(false)
       }
     }
   };
 
-  constructor(
-    isReadOnly: boolean,
-    sessionId: string,
-    userId: string,
-    docID: string,
-    quill: QuillWrapper,
-    clientHTTP: ApolloClient<any>,
-    clientWS: Client,
-    deltaQueue: DeltaQueue
-  ) {
-    // initialize config
-    this.isReadOnly = isReadOnly;
-    this.sessionId = sessionId;
-    this.config = new PageConfiguration('A4', GLOBAL_MARGIN);
-    this.QuillWrapper = QuillWrapper; // QuillWrapper class
-    this.pushToPageList(quill);
-    this.clientHTTP = clientHTTP;
-    this.clientWS = clientWS;
-    this.userId = userId;
-    this.deltaQueue = deltaQueue;
-    this.documentId = docID;
-    this.registerEventListener();
-    this.subscribeDocument(docID);
-    // this.deltaManager = new DeltaManager(quill.getContents());
-  }
+
   static newQuill(container: HTMLElement, isReadOnly: boolean) {
     const quill = new QuillWrapper(container, {
       readOnly: isReadOnly,
       modules: {
         toolbar: toolbarOptions,
+        cursors: true
       },
       placeholder: 'Type here...',
       theme: 'snow',
@@ -336,78 +376,91 @@ export default class PageManager {
     return newQuill;
   }
 
-  registerEventListener() {
+  async savePage() {
     let updateLoading = false;
 
-    document.addEventListener('keydown', async (e) => {
-      if (!updateLoading && e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        const listUnsavedPage = this.pages.filter((page) => !page.saved);
-        // descrease image quality
-        html2canvas(this.pages[0].root, {
-          scale: 0.5,
-        })
-          .then(async (canvas) => {
-            // convert canvas to image and convert to png
-            const dataURL = canvas.toDataURL('image/png');
-            // convert to blob and upload to server
-            const blob = await fetch(dataURL).then((r) => r.blob());
-            const file = new File([blob], `${randomString(20)}.png`, {
-              type: 'image/png',
-            });
-            return file;
-          })
-          .then(async (file) => {
-            const { data } = await useUploadPreviewImgDoc(
-              this.sessionId,
-              file,
-              this.userId
-            );
-            if (data?.singleUpload.id) {
-              const { data: docImgPreview } =
-                await useUpdateDocumentPreviewImage(
-                  this.sessionId,
-                  this.documentId,
-                  data?.singleUpload.id
-                );
-              console.log(docImgPreview);
-            }
-          });
-        if (listUnsavedPage.length) {
-          updateLoading = true;
-          let errors: string[] = [];
-          try {
-            await Promise.all(
-              listUnsavedPage.map(async (page) => {
-                try {
-                  await useGetEventDocumentServerRequestSync(
-                    this.sessionId,
-                    JSON.stringify(page.getContents()),
-                    this.documentId,
-                    Number(page.container.id.split('-')[1])
-                  );
-                  this.pages[Number(page.container.id.split('-')[1])].saved =
-                    true;
-                } catch (err: any) {
-                  // Collect all errors
-                  errors.push(
-                    `Error updating page ${page.container.id}: ${err.message}`
-                  );
-                }
-              })
-            );
+    if (updateLoading) return;
 
-            if (errors.length === 0) {
-              toast.success('Cập nhật thành công');
-            } else {
-              toast.error(`Có lỗi xảy ra: ${errors.join(', ')}`);
-            }
-          } catch {
-            toast.error('Có lỗi xảy ra trong quá trình cập nhật.');
-          } finally {
-            updateLoading = false;
+    const listUnsavedPage = this.pages.filter((page) => !page.saved);
+    // descrease image quality
+    if (listUnsavedPage.length) {
+
+      // create canvas for document
+      html2canvas(this.pages[0].root, {
+        scale: 0.5,
+      })
+        .then(async (canvas) => {
+          // convert canvas to image and convert to png
+          const dataURL = canvas.toDataURL('image/png');
+          // convert to blob and upload to server
+          const blob = await fetch(dataURL).then((r) => r.blob());
+          const file = new File([blob], `${randomString(20)}.png`, {
+            type: 'image/png',
+          });
+          return file;
+        })
+        .then(async (file) => {
+          const { data } = await useUploadPreviewImgDoc(
+            this.sessionId,
+            file,
+            this.userId
+          );
+          if (data?.singleUpload.id) {
+            const { data: docImgPreview } =
+              await useUpdateDocumentPreviewImage(
+                this.sessionId,
+                this.documentId,
+                data?.singleUpload.id
+              );
+            console.log(docImgPreview);
           }
+        });
+
+      updateLoading = true;
+
+      let errors: string[] = [];
+
+      // save document
+      try {
+        this.handleIsSaveLoading(true)
+        await Promise.all(
+          listUnsavedPage.map(async (page) => {
+            try {
+              await useGetEventDocumentServerRequestSync(
+                this.sessionId,
+                JSON.stringify(page.getContents()),
+                this.documentId,
+                Number(page.container.id.split('-')[1])
+              );
+              this.pages[Number(page.container.id.split('-')[1])].saved =
+                true;
+            } catch (err: any) {
+              // Collect all errors
+              errors.push(
+                `Error updating page ${page.container.id}: ${err.message}`
+              );
+            }
+          })
+        );
+
+        if (errors.length === 0) {
+        } else {
+          toast.error(`Có lỗi xảy ra: ${errors.join(', ')}`);
         }
+      } catch {
+        toast.error('Có lỗi xảy ra trong quá trình cập nhật.');
+      } finally {
+        this.handleIsSaveLoading(false)
+        updateLoading = false;
+      }
+    }
+  }
+
+  registerEventListener() {
+    document.addEventListener('keydown', async (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        await this.savePage()
       }
     });
   }
@@ -462,6 +515,7 @@ export default class PageManager {
   //     return this.nextPage();
   // }
 
+
   previousPage() {
     if (this.currentPageIndex - 1 >= 0) {
       return this.pages[this.currentPageIndex - 1];
@@ -484,8 +538,15 @@ export default class PageManager {
     this.pages[pageIndex].setContents(delta, source);
   }
 
+  registerWithQuill() {
+    return new QuillCursors(this.getCurrentPage())
+  }
+
   pushToPageList(page: QuillWrapper) {
     let tooltip = document.createElement('div');
+    // Initialize QuillCursors
+    // const quillCursors = new QuillCursors(page);
+
 
     page.root.addEventListener('focus', () => {
       if (this.currentPageIndex !== this.pages.indexOf(page)) {
@@ -505,11 +566,26 @@ export default class PageManager {
       if (!(delta instanceof Delta)) {
         return;
       }
-      if (page.container.id !== 'page-0' && page.getLength() === 1) {
-        console.log('delete page');
-        console.log(page.container.id);
-        this.deletePage(this.pages.indexOf(page));
-      }
+
+      this.debounce(async () => {
+        try {
+          this.handleIsSaveLoading(true)
+          await this.savePage()
+          this.handleIsSaveLoading(false)
+        } catch (error) {
+          toast(`Error: ${error}`)
+        }
+      }, 2000)
+
+      // if (page.container.id !== 'page-0' && page.getLength() === 1) {
+      //   console.log('delete page');
+      //   console.log(page.container.id);
+      //   this.deletePage(this.pages.indexOf(page));
+      // }
+
+      // send text change to AI
+
+
 
       page.saved = false;
 
@@ -550,12 +626,19 @@ export default class PageManager {
         tooltip.style.whiteSpace = 'normal';
         tooltip.style.wordBreak = 'break-word';
         tooltip.id = 'tooltip';
-        tooltip.style.display = 'none'; // Ban đầu ẩn đi
+        tooltip.style.display = 'none';
         tooltip.style.position = 'absolute';
         document.body.appendChild(tooltip);
 
+        if (this.quillCursors) {
+          this.quillCursors.createCursor(this.sessionId, this.userName, COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]); // Create cursor with ID "123", name "Khoi", and color "red"
+          this.quillCursors.moveCursor(this.sessionId, range); // Move cursor to position (example: start of the editor)
+        }
+
         if (range.length == 0) {
+
           console.log('User cursor is on', range.index);
+          // quillCursors.removeCursor(this.sessionId)
           tooltip.style.display = 'none';
         } else {
           const text = this.getCurrentPage().getText(range.index, range.length);
@@ -574,6 +657,7 @@ export default class PageManager {
         }
       } else {
         tooltip.style.display = 'none'; // Ban đầu ẩn đi
+        this.quillCursors?.removeCursor(this.sessionId)
         console.log('Cursor not in the editor');
       }
     });
@@ -631,10 +715,31 @@ export default class PageManager {
     this.getCurrentPage().focus();
     // set selection to beginning of the page
     this.getCurrentPage().setSelection(0);
+
+    if (!this.quillCursors) {
+      this.quillCursors = new QuillCursors(this.getCurrentPage());
+    } else {
+      this.quillCursors.removeCursor(this.sessionId)
+      this.quillCursors = null
+      this.quillCursors = new QuillCursors(this.getCurrentPage());
+      // this.quillCursors.moveCursor(this.sessionId, range)
+      // this.registerWithQuill();
+    }
+
   }
 
   attachToolbarToPage(indexToolbar: number) {
     const listToolBar = document.getElementsByClassName('toolbar-customer');
+
+    if (!this.quillCursors) {
+      this.quillCursors = new QuillCursors(this.getCurrentPage());
+    } else {
+      this.quillCursors.removeCursor(this.sessionId)
+      this.quillCursors = null
+      this.quillCursors = new QuillCursors(this.gotoPage(indexToolbar));
+      // this.quillCursors.moveCursor(this.sessionId, range)
+      // this.registerWithQuill();
+    }
 
     Array.from(listToolBar).forEach((toolbar, index) => {
       if (indexToolbar === index) {
@@ -645,6 +750,7 @@ export default class PageManager {
         toolbar.classList.add('display-none-toolbar');
       }
     });
+
   }
 
   // focusToPage(index: number) {
@@ -658,5 +764,13 @@ export default class PageManager {
 
   static isPageOverflowing(page: QuillWrapper) {
     return page.root.scrollHeight > page.root.clientHeight;
+  }
+
+  debounce(func: () => void, delay: number) {
+    if (this.timeoutId) clearTimeout(this.timeoutId);
+    this.timeoutId = setTimeout(() => {
+      func();
+      this.timeoutId = null; // Clear timeout ID after execution
+    }, delay);
   }
 }
