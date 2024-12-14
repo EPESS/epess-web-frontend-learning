@@ -242,7 +242,7 @@ export default class PageManager {
     })) {
       if (
         result?.data?.document &&
-        result?.data?.document.senderId !== this.userId
+        result?.data?.document.senderId !== this.userId && result?.data?.document.senderId !== "system"
       ) {
         // this.pages[result?.data?.document?.pageIndex].updateContents(JSON.parse(result.data?.document.delta), QuillWrapper.sources.SILENT);
         this.applyDelta(
@@ -253,12 +253,20 @@ export default class PageManager {
       }
 
       if (result?.data?.document?.eventType === "document_ai_suggestion") {
-        console.log("document_ai_suggestion");
-        const newContentAI = JSON.parse(result?.data?.document?.delta)
-        // const content = this.gotoPage(result?.data?.document?.pageIndex).getContents().compose(newContentAI)
-        this.gotoPage(result?.data?.document?.pageIndex).setContents(newContentAI, "silent")
+        console.log("document_ai_suggestion", result);
+        // const newContentAI = new Delta((JSON.parse(result?.data?.document?.delta) as Delta).ops)
+        // const content = this.gotoPage(result?.data?.document?.pageIndex).getContents()
+        // const temp = content.diff(newContentAI)
+        // const newContent = newContentAI.insert(temp.)
 
-        this.gotoPage(result?.data?.document?.pageIndex).saved = false
+        // if (newContentAI.ops[0].attributes && newContentAI.ops[0]?.attributes['ai-suggestion'] === true) {
+        //   if (typeof newContentAI.ops[0].insert !== 'string') return
+        //   const corrected = new Delta().insert(newContentAI.ops[0]?.attributes['corrected'] as string)
+        //   const original = new Delta().insert(newContentAI.ops[0].insert)
+        //   const diff = original.diff(corrected)
+        //   const currentContent = this.removeLastOps(diff)
+        //   // handle tool tip display
+        // }
       }
 
       if (result?.data?.document?.requestSync) {
@@ -281,6 +289,10 @@ export default class PageManager {
     }
   };
 
+
+  removeLastOps(delta: Delta) {
+    return delta.ops.slice(0, delta.ops.length - 1)
+  }
 
   static newQuill(container: HTMLElement, isReadOnly: boolean) {
     const quill = new QuillWrapper(container, {
@@ -398,13 +410,11 @@ export default class PageManager {
             this.userId
           );
           if (data?.singleUpload.id) {
-            const { data: docImgPreview } =
-              await useUpdateDocumentPreviewImage(
-                this.sessionId,
-                this.documentId,
-                data?.singleUpload.id
-              );
-            console.log(docImgPreview);
+            await useUpdateDocumentPreviewImage(
+              this.sessionId,
+              this.documentId,
+              data?.singleUpload.id
+            );
           }
         });
 
@@ -628,15 +638,11 @@ export default class PageManager {
         }
 
         if (range.length == 0) {
-
-          console.log('User cursor is on', range.index);
           // quillCursors.removeCursor(this.sessionId)
           tooltip.style.display = 'none';
         } else {
           const text = this.getCurrentPage().getText(range.index, range.length);
-          console.log('User has highlighted', text);
           let bounds = this.getCurrentPage().getBounds(range);
-          console.log('bounds', bounds);
 
           if (bounds) {
             tooltip.innerText = `${text}`;
