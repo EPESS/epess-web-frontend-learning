@@ -13,6 +13,7 @@ import { useGetEventDocumentClientRequestSync } from '@/app/api/document/eventDo
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ToolbarHeader from '@/components/customs/toolbar-header';
 import { useGetDocument } from '@/app/api/document';
+import { useMe } from '@/hooks/use-me';
 
 
 
@@ -51,7 +52,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
   const documentLoadingRef = useRef<boolean>(documentLoading)
 
   const { userId, sessionId } = useAuth();
-  const { user } = useUser()
+  const { user } = useMe()
 
   const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
   const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
@@ -113,7 +114,7 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
         isReadOnly,
         sessionId ?? "",
         userId ?? "",
-        user?.fullName ?? "",
+        user?.name ?? "",
         documentId ?? "",
         PageManager.newQuill(pageElement.current, isReadOnly),
         clientHTTP,

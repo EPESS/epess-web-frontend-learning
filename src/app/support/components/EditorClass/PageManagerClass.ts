@@ -145,14 +145,6 @@ class QuillWrapper extends Quill {
   saved: boolean = true;
 }
 
-const COLOR_PALETTE = [
-  '#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#33FFF6', '#F6FF33', '#A133FF', '#FFB833', '#33FFB8', '#FF3333',
-  '#33A1FF', '#FFD433', '#A8FF33', '#FF33F6', '#3375FF', '#FF8C33', '#33FFA8', '#8C33FF', '#FFC533', '#75FF33',
-  '#FF69B4', '#FFD700', '#00FFFF', '#800080', '#FF4500', '#00FA9A', '#FF6347', '#4682B4', '#ADFF2F', '#1E90FF',
-  '#FF1493', '#7FFF00', '#FF7F50', '#87CEEB', '#9400D3', '#3CB371', '#FFDAB9', '#EE82EE', '#40E0D0', '#B22222',
-  '#00FF7F', '#6495ED', '#DC143C', '#FFA07A', '#7B68EE', '#FFA500', '#FFDEAD', '#2E8B57', '#8A2BE2', '#FF00FF',
-];
-
 Quill.register('modules/cursors', QuillCursors);
 
 export default class PageManager {
@@ -631,7 +623,7 @@ export default class PageManager {
         document.body.appendChild(tooltip);
 
         if (this.quillCursors) {
-          this.quillCursors.createCursor(this.sessionId, this.userName, COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]); // Create cursor with ID "123", name "Khoi", and color "red"
+          this.quillCursors.createCursor(this.sessionId, this.userName, "blue"); // Create cursor with ID "123", name "Khoi", and color "red"
           this.quillCursors.moveCursor(this.sessionId, range); // Move cursor to position (example: start of the editor)
         }
 
