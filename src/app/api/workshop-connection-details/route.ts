@@ -16,6 +16,7 @@ const GET_WORKSHOP_BY_ID = gql`
       id
       serverUrl
       token
+      chatRoomId
     }
   }
 `;
@@ -24,6 +25,7 @@ type WorkshopMeetingRoomJoinInfo = {
   id: string;
   serverUrl: string;
   token: string;
+  chatRoomId: string;
 };
 
 export async function GET(request: NextRequest) {
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
 
     // Return connection details
     const data: ConnectionDetails = {
+      chatRoomId: workshopRoomData.workshopMeetingRoomJoinInfo.chatRoomId,
       serverUrl: workshopRoomData.workshopMeetingRoomJoinInfo.serverUrl,
       roomName: workshopRoomData.workshopMeetingRoomJoinInfo.id,
       participantToken: workshopRoomData.workshopMeetingRoomJoinInfo.token,
