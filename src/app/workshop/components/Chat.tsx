@@ -7,11 +7,10 @@ import {
 import { Button } from '@/components/ui/button';
 import ChatDetail from '@/components/customs/chat/chat-detail';
 
-export function Chat({ ...props }) {
+export function Chat({ roomId, style, ...props }: { roomId: string | undefined, style: React.CSSProperties }) {
   const ulRef = React.useRef<HTMLUListElement>(null);
 
   const layoutContext = useMaybeLayoutContext();
-
 
   React.useEffect(() => {
     if (ulRef) {
@@ -30,9 +29,9 @@ export function Chat({ ...props }) {
   }, [layoutContext]);
 
   return (
-    <div {...props} className='lk-chat'>
+    <div style={style} {...props} className='lk-chat'>
       <ChatHeader />
-      <ChatDetail containerClassName="h-[90%]" roomId="89accd85-d454-4d37-b4d4-91948b500090" />
+      <ChatDetail containerClassName="h-[90%]" roomId={roomId} />
     </div>
   );
 }

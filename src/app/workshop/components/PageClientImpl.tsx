@@ -235,8 +235,7 @@ function VideoConferenceComponent(props: {
           (device) => device.kind === 'videoinput'
         );
         toast.error(
-          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${
-            hasCamera ? '' : 'camera'
+          `Thiết bị ${hasMicrophone ? '' : 'microphone'} ${hasCamera ? '' : 'camera'
           } không tồn tại`,
           {
             theme: 'colored',
@@ -265,7 +264,7 @@ function VideoConferenceComponent(props: {
         onDisconnected={handleOnLeave}
         onError={handleError}
       >
-        <VideoConference SettingsComponent={SettingsMenu} />
+        <VideoConference connectionDetails={props.connectionDetails} SettingsComponent={SettingsMenu} />
         <RecordingIndicator />
       </LiveKitRoom>
     </>
@@ -278,9 +277,11 @@ export type WidgetState = {
 };
 
 const VideoConference = ({
+  connectionDetails,
   SettingsComponent,
   ...props
 }: {
+  connectionDetails: (ConnectionDetails & { participantAvatar: string })
   SettingsComponent: React.FC | undefined;
 }) => {
   const [widgetState, setWidgetState] = React.useState<WidgetState>({
@@ -387,7 +388,7 @@ const VideoConference = ({
               controls={{ chat: true, settings: !!SettingsComponent }}
             />
           </div>
-          <Chat style={{ display: widgetState.showChat ? 'grid' : 'none' }} />
+          <Chat roomId={connectionDetails.chatRoomId} style={{ display: widgetState.showChat ? 'grid' : 'none' }} />
           {SettingsComponent && (
             <div
               className='lk-settings-menu-modal z-[1000] max-w-[350px] w-full xs:max-w-auto'

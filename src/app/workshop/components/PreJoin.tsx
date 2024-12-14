@@ -500,7 +500,7 @@ export function PreJoin({
         </div> */}
         <div className='flex flex-col gap-2'>
           <span className='text-medium text-foreground font-semibold font-sans'>
-            Mã workshop
+            Mã phòng
           </span>
           <input
             className='lk-form-control !text-secondary-foreground !bg-secondary'

@@ -10,33 +10,31 @@ import { auth } from '@clerk/nextjs/server';
 //} from 'livekit-server-sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
-const GET_WORKSHOP_BY_ID = gql`
-  query WorkshopMeetingRoomJoinInfo($workshopId: String!) {
-    workshopMeetingRoomJoinInfo(workshopId: $workshopId) {
+const GET_INTERVIEW_BY_SCHEDULE_ID = gql`
+  query InterviewJoinInfo($scheduleId: String!) {
+    interviewJoinInfo(scheduleId: $scheduleId) {
       id
       serverUrl
       token
-      chatRoomId
     }
   }
 `;
 
-type WorkshopMeetingRoomJoinInfo = {
+type InterviewRoomJoinInfo = {
   id: string;
   serverUrl: string;
   token: string;
-  chatRoomId: string;
 };
 
 export async function GET(request: NextRequest) {
   try {
-    // Handle missing workshopId
-    const workshopId = request.nextUrl.searchParams.get('workshopId');
-    if (typeof workshopId !== 'string') {
+    // Handle missing scheduleId
+    const scheduleId = request.nextUrl.searchParams.get('scheduleId');
+    if (typeof scheduleId !== 'string') {
       return NextResponse.json(
         {
           error: 'Missing required query parameter',
-          message: 'workshopId',
+          message: 'scheduleId',
           stack: null,
         },
         { status: 400 }
@@ -57,21 +55,20 @@ export async function GET(request: NextRequest) {
     }
     const name = request.nextUrl.searchParams.get('name');
 
-    // Get workshop data
+    // Get interview data
     const apolloClient = createApolloClient(sessionId);
-    const { data: workshopRoomData } = await apolloClient.query<{
-      workshopMeetingRoomJoinInfo: WorkshopMeetingRoomJoinInfo;
+    const { data: interviewRoomData } = await apolloClient.query<{
+      interviewJoinInfo: InterviewRoomJoinInfo;
     }>({
-      query: GET_WORKSHOP_BY_ID,
-      variables: { workshopId },
+      query: GET_INTERVIEW_BY_SCHEDULE_ID,
+      variables: { scheduleId },
     });
 
     // Return connection details
     const data: ConnectionDetails = {
-      chatRoomId: workshopRoomData.workshopMeetingRoomJoinInfo.chatRoomId,
-      serverUrl: workshopRoomData.workshopMeetingRoomJoinInfo.serverUrl,
-      roomName: workshopRoomData.workshopMeetingRoomJoinInfo.id,
-      participantToken: workshopRoomData.workshopMeetingRoomJoinInfo.token,
+      serverUrl: interviewRoomData.interviewJoinInfo.serverUrl,
+      roomName: interviewRoomData.interviewJoinInfo.id,
+      participantToken: interviewRoomData.interviewJoinInfo.token,
       participantName: name ?? '',
     };
 

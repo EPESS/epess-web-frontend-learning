@@ -6,6 +6,7 @@ export default function Page({
   searchParams,
 }: {
   searchParams: {
+    scheduleId: string;
     hq?: string;
     codec?: string;
   };
@@ -16,5 +17,11 @@ export default function Page({
       : 'vp9';
   const hq = searchParams.hq === 'true' ? true : false;
 
-  return <PageClientImpl roomName={'123'} hq={hq} codec={codec} />;
+  return (
+    <PageClientImpl
+      scheduleIdData={searchParams.scheduleId ?? ''}
+      hq={hq}
+      codec={codec}
+    />
+  );
 }
