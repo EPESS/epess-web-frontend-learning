@@ -163,7 +163,7 @@ export default class PageManager {
   public sessionId: string = '';
   public isReadOnly: boolean = false;
   public timeoutId: NodeJS.Timeout | null = null;
-  public isSaveLoading: (value: boolean) => void = () => {};
+  public isSaveLoading: (value: boolean) => void = () => { };
   public quillCursors: QuillCursors | null = null;
 
   constructor(
@@ -256,7 +256,7 @@ export default class PageManager {
 
         try {
           const pageIndex = result?.data?.document?.pageIndex;
-          const currentPage = this.gotoPage(pageIndex);
+          // const currentPage = this.gotoPage(pageIndex);
           const aiSuggestionDelta = JSON.parse(
             result?.data?.document?.delta
           ) as Delta;
@@ -763,32 +763,24 @@ export default class PageManager {
     pageIndex: number;
     diff: Delta;
   }) {
-    const { originalText, correctedText, pageIndex, diff } = params;
+    const { originalText, correctedText, pageIndex } = params;
 
     // Create a tooltip element
     const tooltip = document.createElement('div');
     tooltip.className = 'ai-suggestion-tooltip';
     tooltip.innerHTML = `
-      <div class="ai-suggestion-tooltip-container">
-        <div class="ai-suggestion-header">
-          <span class="ai-icon">��</span>
-          AI Suggestion
-        </div>
+      <div class="ai-suggestion-tooltip-container no-scrollbar">
         <div class="ai-suggestion-content">
-          <div class="original">
-            <span class="label">Original:</span> 
-            <span class="text">${originalText}</span>
-          </div>
           <div class="corrected">
-            <span class="label">Suggested:</span> 
+            <span class="label font-bold">Suggested:</span> 
             <span class="text">${correctedText}</span>
           </div>
         </div>
-        <div class="ai-suggestion-actions">
-          <button class="accept-suggestion btn-primary">
+        <div class="ai-suggestion-actions mt-2">
+          <button class="accept-suggestion btn-primary py-1 px-2 bg-green-500">
             <span>✓</span> Accept
           </button>
-          <button class="reject-suggestion btn-secondary">
+          <button class="reject-suggestion btn-secondary py-1 px-2 bg-red-500">
             <span>✗</span> Reject
           </button>
         </div>
@@ -797,6 +789,8 @@ export default class PageManager {
     tooltip.style.position = 'absolute';
     tooltip.style.top = '0';
     tooltip.style.left = '0';
+    tooltip.style.zIndex = "100"
+    tooltip.style.border = "3px"
 
     // Position the tooltip near the text
     const page = document.getElementById(`page-${pageIndex}`);
@@ -807,7 +801,7 @@ export default class PageManager {
     const rejectButton = tooltip.querySelector('.reject-suggestion');
 
     acceptButton?.addEventListener('click', () => {
-      this.applyAISuggestion(pageIndex, originalText, correctedText, diff);
+      this.applyAISuggestion(pageIndex, originalText, correctedText);
       tooltip.remove();
     });
 
@@ -824,7 +818,7 @@ export default class PageManager {
     pageIndex: number,
     originalText: string,
     correctedText: string,
-    diff: Delta
+    // diff: Delta
   ) {
     const page = this.gotoPage(pageIndex);
 

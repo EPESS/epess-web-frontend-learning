@@ -208,6 +208,16 @@ h2 a {
   }
 }
 
+.ai-suggestion-tooltip-container{
+  background-color: #d6d6d6;
+  max-height: 200px;
+  overflow-y:auto;
+  padding: 10px;
+  border-radius: 5px;
+  @apply shadow-sm
+  
+}
+
 .display-toolbar{
   display: block !important;
   position: sticky;
