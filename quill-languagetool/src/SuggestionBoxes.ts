@@ -1,7 +1,8 @@
-import debug from "./debug";
-import Delta from "quill-delta";
-import type Quill from "quill";
-import { QuillLanguageTool } from ".";
+import debug from './debug';
+import Delta from 'quill-delta';
+import type Quill from 'quill';
+import { QuillLanguageTool } from '.';
+import { EmitterSource } from 'quill';
 
 /**
  * Clean all suggestion boxes from an HTML string
@@ -10,14 +11,17 @@ import { QuillLanguageTool } from ".";
  * @returns Cleaned text
  */
 export function getCleanedHtml(html: string) {
-  return html.replace(/<quill-lt-match .+?>(.*?)<\/quill-lt-match>/g, "$1");
+  return html.replace(/<quill-lt-match .+?>(.*?)<\/quill-lt-match>/g, '$1');
 }
 
 /**
  * Remove all suggestion boxes from the editor.
  */
-export function removeSuggestionBoxes(quillEditor: Quill) {
-  debug("Removing suggestion boxes for editor", quillEditor);
+export function removeSuggestionBoxes(
+  quillEditor: Quill,
+  source?: EmitterSource
+) {
+  debug('Removing suggestion boxes for editor', quillEditor);
 
   const initialSelection = quillEditor.getSelection();
   const deltas = quillEditor.getContents();
@@ -35,8 +39,10 @@ export function removeSuggestionBoxes(quillEditor: Quill) {
     return delta;
   });
 
-  // @ts-ignore
-  quillEditor.setContents(new Delta(deltasWithoutSuggestionBoxes));
+  quillEditor.setContents(
+    new Delta(deltasWithoutSuggestionBoxes),
+    source ? source : 'silent'
+  );
 
   if (initialSelection) {
     quillEditor.setSelection(initialSelection);
@@ -70,10 +76,9 @@ export class SuggestionBoxes {
       const ops = new Delta()
         .retain(match.offset)
         .retain(match.length, { ltmatch: match });
-      // @ts-ignore
       this.parent.quill.updateContents(ops);
 
-      debug("Adding formatter", "lt-match", match.offset, match.length);
+      debug('Adding formatter', 'lt-match', match.offset, match.length);
     });
   }
 }

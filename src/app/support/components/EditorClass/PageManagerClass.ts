@@ -1,7 +1,7 @@
 import Toolbar, { ToolbarProps } from 'quill/modules/toolbar';
 import { Client } from 'graphql-ws';
 import Quill, { Parchment } from 'quill';
-import { Delta, EmitterSource } from 'quill/core';
+import { Delta, EmitterSource, Range } from 'quill/core';
 import DeltaQueue from './DeltaQueue';
 import { useGetEventDocumentServerRequestSync } from '@/app/api/document';
 import { ApolloClient } from '@apollo/client';
@@ -10,8 +10,10 @@ import html2canvas from 'html2canvas';
 import { randomString } from '@/lib/client-utils';
 import { useUploadPreviewImgDoc } from '@/app/api/document/uploadPreviewImgDoc';
 import { useUpdateDocumentPreviewImage } from '@/app/api/document/updateDocumentPreviewImage';
-import QuillCursors from 'quill-cursors';
+import QuillCursors, { Cursor } from 'quill-cursors';
 import registerQuillLanguageTool from 'quill-languagetool/src';
+import { removeSuggestionBoxes } from 'quill-languagetool';
+import crypto from 'crypto';
 
 registerQuillLanguageTool(Quill);
 
@@ -204,6 +206,14 @@ export default class PageManager {
     this.isSaveLoading(value);
   }
 
+  // generate cursor color from userid and convert to hex color
+  // user_2nQcfn8VKMgTEoGc4p9JRdHr6uJ to number and convert to hex color
+  generateCursorColor(userId: string) {
+    const hash = crypto.createHash('sha256').update(userId).digest('hex');
+    const number = parseInt(hash.slice(0, 6), 16);
+    return `#${number.toString(16).padStart(6, '0')}`;
+  }
+
   get currentPageIndex() {
     return this._currentPageIndex;
   }
@@ -228,11 +238,29 @@ export default class PageManager {
         eventType: string;
         documentId: string;
         pageIndex: number;
+        cursor: {
+          color: string;
+          id: string;
+          name: string;
+          range: {
+            index: number;
+            length: number;
+          };
+        };
       };
     }>({
       query: `subscription Document {
     document(documentId: "${documentId}") {
         delta
+        cursor {
+          color
+          id
+          name
+          range {
+            index
+            length
+          }
+        }
         documentId
         eventType
         pageIndex
@@ -255,21 +283,48 @@ export default class PageManager {
       }
 
       if (result?.data?.document?.requestSync) {
-        console.log('meow meow');
+        console.log('Syncing document');
 
+        removeSuggestionBoxes(this.pages[result?.data?.document?.pageIndex]);
         const delta = this.gotoPage(
           result?.data?.document?.pageIndex
         ).getContents();
+
         if (delta) {
           this.handleIsSaveLoading(true);
           useGetEventDocumentServerRequestSync(
             this.sessionId,
             JSON.stringify(delta),
             this.documentId,
+            null,
             result?.data?.document?.pageIndex
           );
         }
         this.handleIsSaveLoading(false);
+      }
+      if (
+        result?.data?.document?.eventType === 'document_cursor_moved' &&
+        result?.data?.document?.cursor
+      ) {
+        // create cursor if not exist
+        if (!this.quillCursors) {
+          this.quillCursors = new QuillCursors(this.getCurrentPage());
+        }
+        // check if cursor with same id exist
+        const cursor = this.quillCursors
+          .cursors()
+          .find((cursor) => cursor.id === result?.data?.document?.cursor?.id);
+        if (!cursor) {
+          this.quillCursors.createCursor(
+            result?.data?.document?.cursor?.id,
+            result?.data?.document?.cursor?.name,
+            result?.data?.document?.cursor?.color
+          );
+        }
+        this.quillCursors.moveCursor(
+          result?.data?.document?.cursor?.id,
+          result?.data?.document?.cursor?.range
+        );
       }
     }
   };
@@ -311,10 +366,6 @@ export default class PageManager {
     registry.register(module);
     return registry;
   }
-
-  // getToolbar() {
-  //     return this.toolbar;
-  // }
 
   // newPage return page reference
   newPage(container: HTMLElement) {
@@ -422,10 +473,12 @@ export default class PageManager {
         await Promise.all(
           listUnsavedPage.map(async (page) => {
             try {
+              removeSuggestionBoxes(page);
               await useGetEventDocumentServerRequestSync(
                 this.sessionId,
                 JSON.stringify(page.getContents()),
                 this.documentId,
+                null,
                 Number(page.container.id.split('-')[1])
               );
               this.pages[Number(page.container.id.split('-')[1])].saved = true;
@@ -583,6 +636,7 @@ export default class PageManager {
         delta: delta,
         documentId: this.documentId,
         pageIndex: this.currentPageIndex,
+        cursor: null,
       });
     });
 
@@ -602,16 +656,35 @@ export default class PageManager {
 
       if (range) {
         if (this.quillCursors) {
-          this.quillCursors.createCursor(this.sessionId, this.userName, 'blue'); // Create cursor with ID "123", name "Khoi", and color "red"
+          this.quillCursors.createCursor(
+            this.sessionId,
+            this.userName,
+            this.generateCursorColor(this.sessionId)
+          ); // Create cursor with ID "123", name "Khoi", and color "red"
           this.quillCursors.moveCursor(this.sessionId, range); // Move cursor to position (example: start of the editor)
         }
 
-        if (range.length == 0) {
-          this.quillCursors?.removeCursor(this.sessionId);
-        } else {
-          const text = this.getCurrentPage().getText(range.index, range.length);
-          console.log('text', text);
-        }
+        // if (range.length == 0) {
+        //   this.quillCursors?.removeCursor(this.sessionId);
+        // } else {
+        //   const text = this.getCurrentPage().getText(range.index, range.length);
+        //   console.log('text', text);
+        // }
+        // send selection change to server
+        const cursor = this.quillCursors
+          ?.cursors()
+          .find((cursor) => cursor.id === this.sessionId);
+        this.deltaQueue.push({
+          delta: null,
+          documentId: this.documentId,
+          pageIndex: this.currentPageIndex,
+          cursor: {
+            id: this.sessionId,
+            name: this.userName,
+            color: cursor?.color || 'blue',
+            range: cursor?.range || { index: 0, length: 0 },
+          },
+        });
       } else {
         this.quillCursors?.removeCursor(this.sessionId);
         console.log('Cursor not in the editor');
