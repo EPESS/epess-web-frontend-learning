@@ -32,14 +32,15 @@ import { useGetMeetingRoomJoinInfo } from '../api/connection-details';
 
 const Editor = dynamic(() => import('../support/components/Editor'));
 
-export default function Component({
+// Create a wrapper component to handle the search params
+const SupportPageContent = ({
   searchParams = { hq: 'false', codec: 'vp9' },
 }: {
   searchParams?: {
     hq?: string;
     codec?: string;
   };
-}) {
+}) => {
   const [isNewFile, setIsNewFile] = React.useState(false);
 
   const params = useSearchParams();
@@ -98,14 +99,13 @@ export default function Component({
       router.push(LEARNING_URL);
       toast.warning('Lớp học không tồn tại vui lòng liên hệ lại giảng viên !');
     }
-  }, [roomLoading]);
+  }, [roomLoading, collaborationSession, dataCollaboration, router, user?.id]);
 
   const handleNewFile = async () => {
     if (loadingNewFile) return;
     if (loadingUpdateActiveDocument) return;
     const dataCreateDocument = await createDocument({
       onCompleted: (data) => {
-        // setDocumentId(data.createDocument.id)
         updateActiveDocument({
           variables: {
             activeDocumentId: data.createDocument.id,
@@ -142,14 +142,14 @@ export default function Component({
     }
   };
 
-  const handleNewFileSubscription = (data: TCollaborationSessionUpdated) => {
+  const handleNewFileSubscription = React.useCallback((data: TCollaborationSessionUpdated) => {
     if (
       data &&
       data.collaborationSessionUpdated.activeDocument.owner.id !== userId
     ) {
       setIsNewFile(true);
     }
-  };
+  }, [userId]);
 
   const handleLoadNewFile = () => {
     setIsNewFile(false);
@@ -183,7 +183,12 @@ export default function Component({
       dataCollaboration?.collaborationSession.id,
       handleNewFileSubscription
     );
-  }, [roomLoading]);
+  }, [
+    roomLoading,
+    sessionId,
+    dataCollaboration?.collaborationSession.id,
+    handleNewFileSubscription,
+  ]);
 
   const connectionDetail = React.useMemo(() => {
     return {
@@ -205,7 +210,6 @@ export default function Component({
       <div
         className={cn('relative transition-all duration-1000 ease-in-out')}
         style={{
-          // con lạy cụ tỷ lệ vàng
           width: isMeetingAndChatOpen
             ? 'calc(2 / 3 * 100%)'
             : 'calc(24 / 25 * 100%)',
@@ -304,5 +308,21 @@ export default function Component({
         </div>
       </div>
     </div>
+  );
+};
+
+// Wrap the content in Suspense
+export default function Page({
+  searchParams = { hq: 'false', codec: 'vp9' },
+}: {
+  searchParams?: {
+    hq?: string;
+    codec?: string;
+  };
+}) {
+  return (
+    <React.Suspense fallback={<Loading />}>
+      <SupportPageContent searchParams={searchParams} />
+    </React.Suspense>
   );
 }

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user data
-    const sessionId = auth().sessionId;
+    const sessionId = (await auth()).sessionId;
     if (!sessionId) {
       return NextResponse.json(
         {

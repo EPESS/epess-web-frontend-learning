@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useMe } from '@/hooks/use-me';
 import Loading from '@/components/customs/loading';
 import { EJoinRoomErrorCode, useJoinRoom } from './api/support-room';
@@ -11,7 +11,8 @@ import ScaleLoader from 'react-spinners/ScaleLoader';
 import { toast } from 'react-toastify';
 import { LEARNING_URL } from '@/lib/utils';
 
-export default function Page() {
+// Create a wrapper component to handle the search params
+const PageContent = () => {
   const { userLoading } = useMe();
 
   const params = useSearchParams()
@@ -41,8 +42,7 @@ export default function Page() {
         return "Chưa tới giờ hoặc đã kết thúc buổi học. Vui lòng liên hệ giảng viên để biết thêm chi tiết"
 
       default:
-        "Hệ thống lỗi"
-        break;
+        return "Hệ thống lỗi"
     }
   }
 
@@ -71,34 +71,46 @@ export default function Page() {
   }
 
   return (
-
-    <>
-      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-        <div className='flex flex-col gap-5 items-center min-w-[400px] justify-center bg-gray-200 w-fit p-16 rounded-lg'>
-          <div className='w-[200px] h-[200px]'>
-            <img src='/main_icon.png' alt='Logo' />
-          </div>
-          <div className='flex flex-col items-center justify-center'>
-            <Input className='border border-black' required defaultValue={scheduleDateId} onChange={(e) => setScheduleDateId(e.target.value)} name='supportRoomID' type='text' />
-            {scheduleDateIdErr &&
-              <span className='text-red-500'>
-                {scheduleDateIdErr}
-              </span>
-            }
-            {
-              loading
-                ?
-                <div className='flex gap-1 items-center mt-5'>
-                  <span>Vui lòng đợi giây lát</span>
-                  <ScaleLoader width={10} height={10} />
-                </div>
-                :
-                <Button disabled={loading} className='mt-5' onClick={handleJoinRoom} type='button'>Vào phòng</Button>
-            }
-
-          </div>
+    <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+      <div className='flex flex-col gap-5 items-center min-w-[400px] justify-center bg-gray-200 w-fit p-16 rounded-lg'>
+        <div className='w-[200px] h-[200px]'>
+          <img src='/main_icon.png' alt='Logo' />
+        </div>
+        <div className='flex flex-col items-center justify-center'>
+          <Input 
+            className='border border-black' 
+            required 
+            defaultValue={scheduleDateId} 
+            onChange={(e) => setScheduleDateId(e.target.value)} 
+            name='supportRoomID' 
+            type='text' 
+          />
+          {scheduleDateIdErr &&
+            <span className='text-red-500'>
+              {scheduleDateIdErr}
+            </span>
+          }
+          {
+            loading
+              ?
+              <div className='flex gap-1 items-center mt-5'>
+                <span>Vui lòng đợi giây lát</span>
+                <ScaleLoader width={10} height={10} />
+              </div>
+              :
+              <Button disabled={loading} className='mt-5' onClick={handleJoinRoom} type='button'>Vào phòng</Button>
+          }
         </div>
       </div>
-    </>
+    </div>
   );
+}
+
+// Wrap the content in Suspense
+export default function Page() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <PageContent />
+    </Suspense>
+  )
 }

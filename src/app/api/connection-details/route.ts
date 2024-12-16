@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const roomName = request.nextUrl.searchParams.get('roomName');
     const participantName = request.nextUrl.searchParams.get('participantName');
 
-    const sessionId = auth().sessionId;
+    const sessionId = (await auth()).sessionId;
 
     if (!sessionId) {
       return new NextResponse('Missing required user in server: sessionId', {

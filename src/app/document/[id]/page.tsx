@@ -49,7 +49,7 @@ const MyDocumentDetail = () => {
 
     return (
         <div>
-            <Editor handleFileEvent={handleFileEvent} documentId={id.toString()} />
+            <Editor handleFileEvent={handleFileEvent} documentId={id?.toString() ?? ''} />
         </div>
     )
 }

@@ -140,7 +140,7 @@ export class QuillLanguageTool {
 
     return (
       Object.keys(paramsObject)
-        //@ts-expect-error bug bug bug
+        // @ts-ignore 
         .map((key) => `${key}=${encodeURIComponent(paramsObject[key])}`)
         .join('&')
     );
