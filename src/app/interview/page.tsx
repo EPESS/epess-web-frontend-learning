@@ -2,7 +2,7 @@ import * as React from 'react';
 import { PageClientImpl } from './components/PageClientImpl';
 import { isVideoCodec } from '@/lib/types';
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
   searchParams: {

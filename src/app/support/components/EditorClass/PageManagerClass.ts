@@ -11,6 +11,9 @@ import { randomString } from '@/lib/client-utils';
 import { useUploadPreviewImgDoc } from '@/app/api/document/uploadPreviewImgDoc';
 import { useUpdateDocumentPreviewImage } from '@/app/api/document/updateDocumentPreviewImage';
 import QuillCursors from 'quill-cursors';
+import registerQuillLanguageTool from '../../../../../quill-languagetool/src';
+
+registerQuillLanguageTool(Quill);
 
 export enum EVENT_NAMES {
   TEXT_CHANGE = 'text-change',
@@ -163,7 +166,7 @@ export default class PageManager {
   public sessionId: string = '';
   public isReadOnly: boolean = false;
   public timeoutId: NodeJS.Timeout | null = null;
-  public isSaveLoading: (value: boolean) => void = () => { };
+  public isSaveLoading: (value: boolean) => void = () => {};
   public quillCursors: QuillCursors | null = null;
 
   constructor(
@@ -251,48 +254,6 @@ export default class PageManager {
         );
       }
 
-      if (result?.data?.document?.eventType === 'document_ai_suggestion') {
-        console.log('document_ai_suggestion', result);
-
-        try {
-          const pageIndex = result?.data?.document?.pageIndex;
-          // const currentPage = this.gotoPage(pageIndex);
-          const aiSuggestionDelta = JSON.parse(
-            result?.data?.document?.delta
-          ) as Delta;
-          if (
-            aiSuggestionDelta.ops[0]?.attributes?.['ai-suggestion'] === true
-          ) {
-            // Ensure the insert is a string
-            if (typeof aiSuggestionDelta.ops[0].insert !== 'string') return;
-
-            const originalText = aiSuggestionDelta.ops[0].insert;
-            const correctedText = aiSuggestionDelta.ops[0]?.attributes?.[
-              'corrected'
-            ] as string;
-
-            if (!correctedText) return;
-
-            // Create deltas for original and corrected text
-            const originalDelta = new Delta().insert(originalText);
-            const correctedDelta = new Delta().insert(correctedText);
-
-            // Calculate the difference
-            const diff = originalDelta.diff(correctedDelta);
-
-            // Display tooltip with AI suggestion
-            this.showAISuggestionTooltip({
-              originalText,
-              correctedText,
-              pageIndex,
-              diff,
-            });
-          }
-        } catch (error) {
-          console.error('Error processing AI suggestion:', error);
-        }
-      }
-
       if (result?.data?.document?.requestSync) {
         console.log('meow meow');
 
@@ -323,6 +284,12 @@ export default class PageManager {
       modules: {
         toolbar: toolbarOptions,
         cursors: true,
+        languageTool: {
+          apiOptions: {
+            level: 'default',
+            language: 'auto',
+          },
+        },
       },
       placeholder: 'Type here...',
       theme: 'snow',
@@ -355,6 +322,11 @@ export default class PageManager {
     const newPage = new this.QuillWrapper(container, {
       modules: {
         toolbar: false,
+        languageTool: {
+          apiOptions: {
+            level: 'picky',
+          },
+        },
       },
       theme: 'snow',
     });
@@ -754,108 +726,5 @@ export default class PageManager {
       func();
       this.timeoutId = null; // Clear timeout ID after execution
     }, delay);
-  }
-
-  // New method to show AI suggestion tooltip
-  private showAISuggestionTooltip(params: {
-    originalText: string;
-    correctedText: string;
-    pageIndex: number;
-    diff: Delta;
-  }) {
-    const { originalText, correctedText, pageIndex } = params;
-
-    // Create a tooltip element
-    const tooltip = document.createElement('div');
-    tooltip.className = 'ai-suggestion-tooltip';
-    tooltip.innerHTML = `
-      <div class="ai-suggestion-tooltip-container no-scrollbar">
-        <div class="ai-suggestion-content">
-          <div class="corrected">
-            <span class="label font-bold">Suggested:</span> 
-            <span class="text">${correctedText}</span>
-          </div>
-        </div>
-        <div class="ai-suggestion-actions mt-2">
-          <button class="accept-suggestion btn-primary py-1 px-2 bg-green-500">
-            <span>✓</span> Accept
-          </button>
-          <button class="reject-suggestion btn-secondary py-1 px-2 bg-red-500">
-            <span>✗</span> Reject
-          </button>
-        </div>
-      </div>
-    `;
-    tooltip.style.position = 'absolute';
-    tooltip.style.top = '0';
-    tooltip.style.left = '0';
-    tooltip.style.zIndex = "100"
-    tooltip.style.border = "3px"
-
-    // Position the tooltip near the text
-    const page = document.getElementById(`page-${pageIndex}`);
-    if (!page) return;
-
-    // Add event listeners for accept/reject
-    const acceptButton = tooltip.querySelector('.accept-suggestion');
-    const rejectButton = tooltip.querySelector('.reject-suggestion');
-
-    acceptButton?.addEventListener('click', () => {
-      this.applyAISuggestion(pageIndex, originalText, correctedText);
-      tooltip.remove();
-    });
-
-    rejectButton?.addEventListener('click', () => {
-      tooltip.remove();
-    });
-
-    // Append tooltip to the page
-    page.appendChild(tooltip);
-  }
-
-  // Updated method to apply AI suggestion with diff highlighting
-  private applyAISuggestion(
-    pageIndex: number,
-    originalText: string,
-    correctedText: string,
-    // diff: Delta
-  ) {
-    const page = this.gotoPage(pageIndex);
-
-    // Find the index of the original text
-    const content = page.getContents();
-    const index = content.ops.findIndex(
-      (op) => typeof op.insert === 'string' && op.insert === originalText
-    );
-
-    if (index !== -1) {
-      // Calculate the starting position of the original text
-      const startPosition = content.ops
-        .slice(0, index)
-        .reduce(
-          (acc, op) =>
-            acc + (typeof op.insert === 'string' ? op.insert.length : 1),
-          0
-        );
-
-      // Replace the original text with the corrected text
-      page.updateContents(
-        new Delta()
-          .retain(startPosition)
-          .delete(originalText.length)
-          .insert(correctedText, { 'ai-highlight': true }),
-        QuillWrapper.sources.USER
-      );
-
-      // Add CSS for AI highlight
-      const style = document.createElement('style');
-      style.innerHTML = `
-        .ql-editor .ai-highlight {
-          background-color: yellow;
-          text-decoration: underline wavy green;
-        }
-      `;
-      document.head.appendChild(style);
-    }
   }
 }
