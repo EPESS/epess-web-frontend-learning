@@ -25,9 +25,13 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "quill-languagetool": [
+        "./quill-languagetool/src"
       ]
     },
-    "target": "ES2017"
+    "target": "ES2017",
+    "baseUrl": "."
   },
   "include": [
     "next-env.d.ts",

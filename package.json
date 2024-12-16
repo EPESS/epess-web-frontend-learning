@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run build:ci -w quill-languagetool",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -77,7 +78,10 @@
     "tailwindcss": "^3.4.16",
     "typescript": "^5"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-musl": "*"
+  },
   "workspaces": [
-    "quill-languagetool/*"
+    "quill-languagetool"
   ]
 }

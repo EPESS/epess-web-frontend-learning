@@ -4,7 +4,7 @@ ARG NODE_VERSION=20.14.0
 
 ################################################################################
 # Use node image for base image for all stages.
-FROM node:${NODE_VERSION}-alpine as base
+FROM node:${NODE_VERSION}-alpine AS base
 
 # Set working directory for all build stages.
 WORKDIR /usr/src/app
@@ -17,7 +17,8 @@ ENV NEXT_PUBLIC_LIVEKIT_URL=${NEXT_PUBLIC_LIVEKIT_URL}
 
 ################################################################################
 # Create a stage for installing production dependencies.
-FROM base as deps
+FROM base AS deps
+
 
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=package-lock.json,target=package-lock.json \
@@ -26,7 +27,7 @@ RUN --mount=type=bind,source=package.json,target=package.json \
 
 ################################################################################
 # Create a stage for building the application.
-FROM deps as build
+FROM deps AS build
 
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=package-lock.json,target=package-lock.json \
@@ -41,12 +42,12 @@ RUN npm run build
 
 ################################################################################
 # Create a new stage to run the application with minimal runtime dependencies.
-FROM base as final
+FROM base AS final
 
 # Use production node environment by default.
 ENV NODE_ENV production
 
-# Run the application as a non-root user.
+# Run the application AS a non-root user.
 USER node
 
 # Copy package.json so that package manager commands can be used.

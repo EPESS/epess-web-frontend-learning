@@ -30,6 +30,14 @@
   "include": [
     "src"
   ],
+  "paths": {
+    "@/*": [
+      "./src/*"
+    ],
+    "quill-languagetool": [
+      "./dist"
+    ]
+  },
   "exclude": [
     "node_modules",
     "build",

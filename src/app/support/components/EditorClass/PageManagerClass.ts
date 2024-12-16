@@ -11,7 +11,7 @@ import { randomString } from '@/lib/client-utils';
 import { useUploadPreviewImgDoc } from '@/app/api/document/uploadPreviewImgDoc';
 import { useUpdateDocumentPreviewImage } from '@/app/api/document/updateDocumentPreviewImage';
 import QuillCursors from 'quill-cursors';
-import registerQuillLanguageTool from '../../../../../quill-languagetool/src';
+import registerQuillLanguageTool from 'quill-languagetool/src';
 
 registerQuillLanguageTool(Quill);
 
