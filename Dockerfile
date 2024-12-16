@@ -15,6 +15,9 @@ ENV NEXT_PUBLIC_GRAPHQL_URL=${NEXT_PUBLIC_GRAPHQL_URL}
 ARG NEXT_PUBLIC_LIVEKIT_URL
 ENV NEXT_PUBLIC_LIVEKIT_URL=${NEXT_PUBLIC_LIVEKIT_URL}
 
+# Install rollup globally
+RUN npm install --global rollup
+
 ################################################################################
 # Create a stage for installing production dependencies.
 FROM base AS deps
