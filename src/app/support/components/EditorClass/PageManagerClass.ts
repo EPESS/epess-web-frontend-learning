@@ -356,7 +356,7 @@ export default class PageManager {
     return newQuill;
   }
 
-  newJSXPageWithData(document: Document, data: Delta) {
+  newJSXPageWithData(document: Document, data: Delta, source?: EmitterSource) {
     // padding size
     const { width, height } = PAGE_SIZES[this.config.pageSize];
     const newPage = document.createElement('div');
@@ -369,7 +369,7 @@ export default class PageManager {
     this.getLastPage().container.after(newPage);
     // create new quill instance and push to page list
     const newQuill = PageManager.newQuill(newPage, this.isReadOnly);
-    newQuill.setContents(data);
+    newQuill.setContents(data, source);
     this.pushToPageList(newQuill);
     this.moveCursorToNextPage();
     return newQuill;
@@ -503,8 +503,8 @@ export default class PageManager {
     return this.newJSXPage(document);
   }
 
-  async loadNextWithData(delta: Delta) {
-    return this.newJSXPageWithData(document, delta);
+  async loadNextWithData(delta: Delta, source?: EmitterSource) {
+    return this.newJSXPageWithData(document, delta, source);
   }
   // async loadNextWithData() {
   //     return this.nextPage();

@@ -137,11 +137,11 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
 
 
     if (documentData && page === 0) {
-      newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), page, 'silent')
+      newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), page, 'api')
       newPageManagerRef.current.attachToolbarToPage(0);
 
     } else {
-      newPageManagerRef.current?.loadNextWithData(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string))
+      newPageManagerRef.current?.loadNextWithData(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), 'api')
       newPageManagerRef.current.attachToolbarToPage(page);
     }
 
