@@ -40,6 +40,11 @@ RUN --mount=type=bind,source=package.json,target=package.json \
 # Copy the rest of the source files into the image.
 COPY . .
 
+WORKDIR /usr/src/app/quill-languagetool
+# Run the install script.
+RUN npm install
+
+WORKDIR /usr/src/app
 # Run the build script.
 RUN npm run build
 
@@ -59,6 +64,7 @@ COPY package.json .
 # Copy the production dependencies from the deps stage and also
 # the built application from the build stage into the image.
 COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/quill-languagetool/node_modules ./quill-languagetool/node_modules
 COPY --from=build /usr/src/app/.next ./.next
 COPY --from=build /usr/src/app/public ./public
 
