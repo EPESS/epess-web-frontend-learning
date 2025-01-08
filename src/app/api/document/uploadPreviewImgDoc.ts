@@ -13,7 +13,7 @@ export type UploadPreviewImgDocResponse = {
 };
 
 const UPLOADPREVIEWIMGDOC = gql`
-  mutation SingleUpload($file: Upload!, $userId: String!) {
+  mutation UploadPreviewImgDoc($file: Upload!, $userId: String!) {
     singleUpload(file: $file, fileType: IMAGE, userId: $userId) {
       id
     }

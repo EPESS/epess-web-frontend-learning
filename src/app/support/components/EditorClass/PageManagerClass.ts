@@ -14,6 +14,7 @@ import QuillCursors, { Cursor } from 'quill-cursors';
 import registerQuillLanguageTool from 'quill-languagetool/src';
 import { removeSuggestionBoxes } from 'quill-languagetool';
 import crypto from 'crypto';
+import { gql } from '@/graphql';
 
 registerQuillLanguageTool(Quill);
 
@@ -160,7 +161,6 @@ export default class PageManager {
   public _currentPageIndex: number = 0;
   public subscription: any;
   public clientHTTP: ApolloClient<any>;
-  public clientWS: Client;
   public deltaQueue: DeltaQueue;
   public documentId: string = '';
   public userId: string = '';
@@ -179,7 +179,6 @@ export default class PageManager {
     docID: string,
     quill: QuillWrapper,
     clientHTTP: ApolloClient<any>,
-    clientWS: Client,
     deltaQueue: DeltaQueue,
     isSaveLoading: (value: boolean) => void
   ) {
@@ -190,7 +189,6 @@ export default class PageManager {
     this.QuillWrapper = QuillWrapper; // QuillWrapper class
     this.pushToPageList(quill);
     this.clientHTTP = clientHTTP;
-    this.clientWS = clientWS;
     this.userId = userId;
     this.userName = userName;
     this.deltaQueue = deltaQueue;
@@ -230,103 +228,99 @@ export default class PageManager {
   // }
 
   subscribeDocument = async (documentId: string) => {
-    for await (const result of this.clientWS.iterate<{
-      document: {
-        senderId: string;
-        requestSync: boolean;
-        delta: string;
-        eventType: string;
-        documentId: string;
-        pageIndex: number;
-        cursor: {
-          color: string;
-          id: string;
-          name: string;
-          range: {
-            index: number;
-            length: number;
-          };
-        };
-      };
-    }>({
-      query: `subscription Document {
-    document(documentId: "${documentId}") {
-        delta
-        cursor {
-          color
-          id
-          name
-          range {
-            index
-            length
+    const subscription = this.clientHTTP.subscribe({
+      query: gql(
+        `
+        subscription subscribeDocument($documentId: String!) {
+          document(documentId: $documentId) {
+            senderId
+            requestSync
+            delta
+            eventType
+            documentId
+            pageIndex
+            cursor {
+              color
+              id
+              name
+              range {
+                index
+                length
+              }
+            }
           }
         }
-        documentId
-        eventType
-        pageIndex
-        requestSync
-        senderId
-        totalPage
-    }
-  }`,
-    })) {
-      if (
-        result?.data?.document &&
-        result?.data?.document.senderId !== this.userId &&
-        result?.data?.document.senderId !== 'system'
-      ) {
-        this.applyDelta(
-          JSON.parse(result.data?.document.delta),
-          result?.data?.document?.pageIndex,
-          QuillWrapper.sources.API
-        );
-      }
+      `
+      ),
+      variables: { documentId },
+    });
 
-      if (result?.data?.document?.requestSync) {
-        console.log('Syncing document');
+    subscription.subscribe({
+      next: (result) => {
+        const data = result.data;
 
-        removeSuggestionBoxes(this.pages[result?.data?.document?.pageIndex]);
-        const delta = this.gotoPage(
-          result?.data?.document?.pageIndex
-        ).getContents();
-
-        if (delta) {
-          this.handleIsSaveLoading(true);
-          useGetEventDocumentServerRequestSync(
-            this.sessionId,
-            JSON.stringify(delta),
-            this.documentId,
-            null,
-            result?.data?.document?.pageIndex
+        if (
+          data?.document &&
+          data.document.senderId !== this.userId &&
+          data.document.senderId !== 'system'
+        ) {
+          this.applyDelta(
+            JSON.parse(data.document.delta),
+            data.document.pageIndex ?? 0,
+            QuillWrapper.sources.API
           );
         }
-        this.handleIsSaveLoading(false);
-      }
-      if (
-        result?.data?.document?.eventType === 'document_cursor_moved' &&
-        result?.data?.document?.cursor
-      ) {
-        // create cursor if not exist
-        if (!this.quillCursors) {
-          this.quillCursors = new QuillCursors(this.getCurrentPage());
+
+        // Handle other subscription events
+        if (data?.document?.requestSync) {
+          console.log('Syncing document');
+
+          removeSuggestionBoxes(this.pages[data?.document?.pageIndex ?? 0]);
+          const delta = this.gotoPage(
+            data?.document?.pageIndex ?? 0
+          ).getContents();
+
+          if (delta) {
+            this.handleIsSaveLoading(true);
+            useGetEventDocumentServerRequestSync(
+              this.sessionId,
+              JSON.stringify(delta),
+              this.documentId,
+              null,
+              data?.document?.pageIndex ?? 0
+            );
+          }
+          this.handleIsSaveLoading(false);
         }
-        // check if cursor with same id exist
-        const cursor = this.quillCursors
-          .cursors()
-          .find((cursor) => cursor.id === result?.data?.document?.cursor?.id);
-        if (!cursor) {
-          this.quillCursors.createCursor(
-            result?.data?.document?.cursor?.id,
-            result?.data?.document?.cursor?.name,
-            result?.data?.document?.cursor?.color
-          );
+        if (
+          data?.document?.eventType === 'document_cursor_moved' &&
+          data?.document?.cursor
+        ) {
+          // create cursor if not exist
+          if (!this.quillCursors) {
+            this.quillCursors = new QuillCursors(this.getCurrentPage());
+          }
+          // check if cursor with same id exist
+          const cursor = this.quillCursors
+            .cursors()
+            .find((cursor) => cursor.id === data?.document?.cursor?.id);
+          if (!cursor) {
+            this.quillCursors.createCursor(
+              data?.document?.cursor?.id ?? '',
+              data?.document?.cursor?.name ?? '',
+              data?.document?.cursor?.color ?? ''
+            );
+          }
+          this.quillCursors.moveCursor(data?.document?.cursor?.id ?? '', {
+            index: data?.document?.cursor?.range?.index ?? 0,
+            length: data?.document?.cursor?.range?.length ?? 0,
+          });
         }
-        this.quillCursors.moveCursor(
-          result?.data?.document?.cursor?.id,
-          result?.data?.document?.cursor?.range
-        );
-      }
-    }
+      },
+      error: (err) => {
+        console.error('Subscription error:', err);
+      },
+    });
   };
 
   removeLastOps(delta: Delta) {

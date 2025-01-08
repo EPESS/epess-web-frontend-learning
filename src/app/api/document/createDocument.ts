@@ -43,7 +43,7 @@ type TCollaborator = {
 }
 
 const CREATESELFDOCUMENT = gql`
-mutation CreateDocument  {
+mutation CreateSelfDocument  {
     createDocument{
         createdAt
         fileUrl

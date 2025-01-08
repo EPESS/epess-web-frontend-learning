@@ -1,5 +1,6 @@
-import { ApolloClient, gql } from '@apollo/client';
+import { ApolloClient } from '@apollo/client';
 import { Delta } from 'quill/core';
+import { gql } from '@/graphql';
 
 export interface DocumentDeltaInput {
   delta: Delta | null;
@@ -32,7 +33,8 @@ export default class DeltaQueue {
       const deltaStr = JSON.stringify(delta);
       // handle send delta to server
       await this.clientHTTP.mutate({
-        mutation: gql`
+        mutation: gql(
+          `
           mutation EventDocumentChanged($data: DocumentDeltaInput!) {
             eventDocumentChanged(data: $data) {
               delta
@@ -49,7 +51,8 @@ export default class DeltaQueue {
               }
             }
           }
-        `,
+        `
+        ),
         variables: {
           data: {
             delta: deltaStr,
@@ -60,7 +63,7 @@ export default class DeltaQueue {
         },
       });
     }
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 20));
     await this.emit();
   }
 

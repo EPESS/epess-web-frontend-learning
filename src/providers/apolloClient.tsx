@@ -1,77 +1,60 @@
 'use client';
 
-import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+import { ApolloClient, InMemoryCache, ApolloProvider, split } from '@apollo/client';
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { useAuth } from '@clerk/nextjs';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
-import { Client, createClient } from 'graphql-ws';
+import { createClient } from 'graphql-ws';
+import { loadDevMessages, loadErrorMessages } from '@apollo/client/dev';
 
-const API_URL = process.env.NEXT_PUBLIC_ENVIRONMENT === 'development'
-  ? process.env.NEXT_PUBLIC_GRAPHQL_DEV_URL
-  : process.env.NEXT_PUBLIC_GRAPHQL_URL;
-
-let clientWSInstance: Client | null = null;
-
-export const clientWS = (sessionId: string) => {
-    if (!clientWSInstance) {
-        clientWSInstance = createClient({
-            connectionParams: () => {
-                const headers = {
-                    'x-session-id': sessionId
-                }
-
-                return headers
-            }
-            ,
-            url: process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'https://api.epess.org/v1/graphql',
-            on: {
-                connecting: () => {
-                    console.log("Connecting");
-                },
-                connected: () => {
-                    console.log('WebSocket connected successfully.');
-                },
-                error: (error) => {
-                    console.error('WebSocket connection error:', error);
-                },
-                closed: () => {
-                    console.log('WebSocket connection closed.');
-                }
-            }
-        });
-    }
-    return clientWSInstance
+if (process.env.NODE_ENV === 'development') {
+    console.log('ApolloProvider is running in development mode');
+    loadDevMessages();
+    loadErrorMessages();
 }
 
-const uploadLink = createUploadLink({
-  uri: API_URL ?? 'https://api.epess.org/v1/graphql',
-  headers: {
-    'x-apollo-operation-name': 'GraphQL',
-  },
-});
 
 export const createApolloClient = (sessionId: string | null) => {
-  const authLink = setContext((_, { headers }) => ({
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-      'X-Session-Id': sessionId ? sessionId : '',
-    },
-  }));
 
-  return new ApolloClient({
-    link: authLink.concat(uploadLink),
-    cache: new InMemoryCache(),
-  });
+    const wsLink = new GraphQLWsLink(
+        createClient({
+            url: process.env.NEXT_PUBLIC_GRAPHQL_WS_URL ?? 'wss://api.epess.org/v1/graphql',
+            connectionParams: () => {
+                return {
+                    'x-session-id': sessionId
+                }
+            },
+            retryAttempts: 3,
+            keepAlive: 10000,
+        }),
+    );
+
+    const uploadLink = createUploadLink({
+        uri: process.env.NEXT_PUBLIC_GRAPHQL_URL ?? 'https://api.epess.org/v1/graphql',
+        headers: {
+            'x-apollo-operation-name': 'Upload',
+        },
+    });
+
+
+    const link = split(
+        (operation) => operation.operationName.includes('Upload') || operation.operationName.includes('SubscribeDocument'),
+        uploadLink,
+        wsLink
+    );
+
+    return new ApolloClient({
+        link: link,
+        cache: new InMemoryCache(),
+    });
 };
 
 const ApolloClientProvider = ({ children }: { children: React.ReactNode }) => {
-  const { sessionId } = useAuth();
-  const client = createApolloClient(sessionId!);
-  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+    const { sessionId } = useAuth();
+    const client = createApolloClient(sessionId!);
+    return <ApolloProvider client={client}>{children}</ApolloProvider>;
 };
 
 ApolloClientProvider.displayName = 'ApolloClientProvider';
-
 
 export default ApolloClientProvider;

@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run codegen && next dev",
     "prebuild": "npm run build:ci -w quill-languagetool",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"src/**/(*.tsx|*.ts|*.css|*.scss)\"",
-    "format:check": "prettier --check \"src/**/(*.tsx|*.ts|*.css|*.scss)\""
+    "format:check": "prettier --check \"src/**/(*.tsx|*.ts|*.css|*.scss)\"",
+    "codegen": "graphql-codegen"
   },
   "dependencies": {
     "@apollo/client": "^3.12.3",
@@ -17,6 +18,7 @@
     "@datadog/browser-logs": "^5.34.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
+    "@graphql-codegen/cli": "^5.0.3",
     "@livekit/components-react": "^2.6.10",
     "@livekit/components-styles": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -63,12 +65,19 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@graphql-codegen/client-preset": "^4.5.1",
+    "@graphql-codegen/schema-ast": "^4.1.0",
+    "@graphql-codegen/typescript": "^4.1.2",
+    "@graphql-codegen/typescript-graphql-request": "^6.2.0",
+    "@graphql-codegen/typescript-operations": "^4.4.0",
+    "@graphql-codegen/typescript-react-apollo": "^4.3.2",
+    "@graphql-typed-document-node/core": "^3.2.0",
     "@types/apollo-upload-client": "^18.0.0",
+    "@types/istanbul-lib-report": "^3.0.3",
     "@types/node": "^22",
     "@types/quill": "^2.0.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/istanbul-lib-report": "^3.0.3",
     "@types/ws": "^8.5.13",
     "@types/yargs-parser": "^21.0.3",
     "eslint": "^9",

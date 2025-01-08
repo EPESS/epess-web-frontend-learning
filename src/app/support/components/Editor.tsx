@@ -1,9 +1,7 @@
-'use client';
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
-import { clientWS as createClientWS, createApolloClient } from '@/providers/apolloClient'
+import clientWS, { createApolloClient } from '@/providers/apolloClient'
 import { useAuth } from '@clerk/nextjs';
 import DeltaQueue from './EditorClass/DeltaQueue';
 import { GLOBAL_MARGIN, PageConfiguration } from './EditorClass';
@@ -55,7 +53,6 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
   const { user } = useMe()
 
   const clientHTTP = useMemo(() => createApolloClient(sessionId!), [sessionId]);
-  const clientWS = useMemo(() => createClientWS(sessionId!), [sessionId]);
 
   const { loading, data } = useGetDocument(documentId)
 
@@ -105,11 +102,11 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
   }, [documentLoading])
 
   useEffect(() => {
-    // Kiểm tra pageElement đã có sẵn chưa
-    if (!pageElement.current) return; // Nếu pageElement chưa có sẵn thì không khởi tạo
+    // Combine initialization and data loading logic
+    if (!pageElement.current || loading || documentLoading) return;
 
-    // Kiểm tra nếu newPageManagerRef chưa được khởi tạo
-    if (!loading && !newPageManagerRef.current) {
+    // Ensure PageManager is initialized only once
+    if (!newPageManagerRef.current) {
       newPageManagerRef.current = new PageManager(
         isReadOnly,
         sessionId ?? "",
@@ -118,34 +115,31 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
         documentId ?? "",
         PageManager.newQuill(pageElement.current, isReadOnly),
         clientHTTP,
-        clientWS,
         deltaQueue,
         handleIsSaveLoading
       );
     }
-  }, [pageElement, sessionId, userId, documentId, clientHTTP, clientWS, deltaQueue, isReadOnly]);
 
-
-  useEffect(() => {
-    if (!documentData) return;
-    if (!newPageManagerRef.current) return;
-    if (!pageElement) return;
-
-    if (documentLoading) {
-      return;
-    }
-
-
+    // Load initial document data
     if (documentData && page === 0) {
-      newPageManagerRef.current.setDelta(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), page, 'api')
-      newPageManagerRef.current.attachToolbarToPage(0);
-
-    } else {
-      newPageManagerRef.current?.loadNextWithData(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string), 'api')
-      newPageManagerRef.current.attachToolbarToPage(page);
+      try {
+        const parsedDelta = JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string);
+        newPageManagerRef.current.setDelta(parsedDelta, page, 'api');
+        newPageManagerRef.current.attachToolbarToPage(0);
+      } catch (error) {
+        console.error('Failed to parse delta:', error);
+      }
     }
-
-  }, [renderOneTime, documentData]);
+  }, [
+    pageElement.current, 
+    loading, 
+    documentLoading, 
+    documentData, 
+    page, 
+    sessionId, 
+    userId, 
+    documentId
+  ]);
 
 
   useEffect(() => {

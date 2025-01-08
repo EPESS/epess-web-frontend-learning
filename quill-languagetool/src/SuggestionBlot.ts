@@ -22,7 +22,6 @@ export default function createSuggestionBlotForQuillInstance(Quill: any) {
         node.setAttribute('data-length', match.length.toString());
         node.setAttribute('data-rule-id', match.rule.id);
       }
-      console.log('Created blot', node);
       return node;
     }
 
