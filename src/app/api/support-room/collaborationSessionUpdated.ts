@@ -1,4 +1,5 @@
-import { clientWS } from "@/providers/apolloClient";
+import { gql } from "@/graphql";
+import { createApolloClient } from "@/providers/apolloClient";
 
 type TActiveDocument = {
     createdAt: string;
@@ -23,12 +24,12 @@ export type TCollaborationSessionUpdated = {
 
 export const useGetCollaborationSessionUpdated = async (sessionId: string | null | undefined, collaborationSessionUpdated: string | undefined, handleChange: (data: TCollaborationSessionUpdated) => void) => {
     if (collaborationSessionUpdated && sessionId) {
-
-        for await (const result of clientWS(sessionId).iterate<TCollaborationSessionUpdated>({
-            query: `
-            subscription CollaborationSessionUpdated  {
+        const result = createApolloClient(sessionId).subscribe<TCollaborationSessionUpdated>({
+            query: gql(
+                `
+            subscription CollaborationSessionUpdated ($collaborationSessionUpdated: String!) {
         collaborationSessionUpdated(
-            collaborationSessionId: "${collaborationSessionUpdated}"
+            collaborationSessionId: $collaborationSessionUpdated
         ) {
             activeDocumentId
             chatRoomId
@@ -55,12 +56,26 @@ export const useGetCollaborationSessionUpdated = async (sessionId: string | null
                 updatedAt
             }
         }
-    }`,
-        })) {
-            if (result?.data) {
-                handleChange(result?.data);
+    }`
+            ),
+            variables: {
+                collaborationSessionUpdated
             }
-        }
+        })
+
+        result.subscribe({
+            next: (data) => {
+                if (data.data) {
+                    handleChange(data.data)
+                }
+                else {
+                    console.error('No data')
+                }
+            },
+            error: (error) => {
+                console.error(error)
+            }
+        })
     }
 
 

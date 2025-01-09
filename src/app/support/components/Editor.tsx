@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import 'quill/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
-import clientWS, { createApolloClient } from '@/providers/apolloClient'
+import { createApolloClient } from '@/providers/apolloClient'
 import { useAuth } from '@clerk/nextjs';
 import DeltaQueue from './EditorClass/DeltaQueue';
 import { GLOBAL_MARGIN, PageConfiguration } from './EditorClass';
@@ -118,27 +118,35 @@ export default function Editor({ documentId, handleFileEvent }: TEditor) {
         deltaQueue,
         handleIsSaveLoading
       );
+
+
     }
 
     // Load initial document data
-    if (documentData && page === 0) {
-      try {
+    try {
+      if (documentData && page === 0) {
         const parsedDelta = JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string);
         newPageManagerRef.current.setDelta(parsedDelta, page, 'api');
         newPageManagerRef.current.attachToolbarToPage(0);
-      } catch (error) {
-        console.error('Failed to parse delta:', error);
+      } else if (documentData?.eventDocumentClientRequestSync.delta != null && page > 0) {
+        newPageManagerRef.current?.loadNextWithData(JSON.parse(documentData?.eventDocumentClientRequestSync?.delta as string))
+        newPageManagerRef.current.attachToolbarToPage(page);
       }
     }
+    catch (error) {
+      console.error('Failed to parse delta:', error);
+    }
   }, [
-    pageElement.current, 
-    loading, 
-    documentLoading, 
-    documentData, 
-    page, 
-    sessionId, 
-    userId, 
-    documentId
+    pageElement.current,
+    loading,
+    documentLoading,
+    documentData,
+    page,
+    sessionId,
+    userId,
+    documentId,
+    documentRef.current,
+    renderOneTime
   ]);
 
 

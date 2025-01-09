@@ -7,7 +7,7 @@ import ScaleLoader from 'react-spinners/ScaleLoader'
 import ChatBottomBar, { MessageType } from './chat-bottom-bar'
 import { useSendMessage } from '@/app/api/message'
 import { useGetChatRoomDetail, Message } from '@/app/api/message/roomDetail'
-import { clientWS } from '@/providers/apolloClient'
+import { createApolloClient } from '@/providers/apolloClient'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import ToolTipCustom from '../tool-tip'
 import { useAuth, useUser } from '@clerk/nextjs'
@@ -16,6 +16,7 @@ import { ArrowDownCircle, MessageCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import CopyButton from '@/components/ui/copy-button'
+import { gql } from '@/graphql'
 
 type TChatDetail = {
     roomId: string | undefined,
@@ -84,51 +85,67 @@ const ChatDetail = ({ roomId, containerClassName }: TChatDetail) => {
     const subscribeMessages = async () => {
         if (!sessionId) return;
 
-        for await (const result of clientWS(sessionId).iterate<{
+        const result = createApolloClient(sessionId).subscribe<{
             messageSent: Message;
         }>({
-            query: `subscription MessageSent {
-    messageSent(chatRoomId: "${roomId}") {
-        chatRoomId
-        content
-        id
-        senderId
-        sentAt
-        type
-        sender {
-            avatarUrl
-            id
-            name
-        }
-        chatRoom {
-            mentor {
-                avatarUrl
-                name
-            }
-        }
-    }
-}`,
-        })) {
-            if (result?.data?.messageSent) {
-                const message = result.data.messageSent;
-
-                if (user?.id !== message.sender.id) {
-                    setNewMessage(
-                        <div className='rounded-md py-2 px-4 bg-amber-200 dark:bg-amber-900'>
-                            <span className='text-sm text-black'>Bạn có tin nhắn mới</span>
-                        </div>
-                    );
-                }
-
-                setListMsg((prev) => {
-                    const msg = prev.find((item) => item.id === message.id);
-                    if (!msg) {
-                        return [message, ...prev];
+            query: gql(`
+                subscription MessageSent ($chatRoomId: String!) {
+                    messageSent(chatRoomId: $chatRoomId)  {
+                        chatRoomId
+                        content
+                        id
+                        senderId
+                        sentAt
+                        type
+                        sender {
+                            avatarUrl
+                            id
+                            name
+                        }
+                        chatRoom {
+                            mentor {
+                                avatarUrl
+                                name
+                            }
+                        }
                     }
-                    return prev;
-                });
+                }`),
+            variables: {
+                chatRoomId: roomId,
+            },
+        })
+
+        result.subscribe({
+            next: (data) => {
+                try {
+                    if (data.data) {
+                        const message = data.data.messageSent;
+
+                        if (user?.id !== message.sender.id) {
+                            setNewMessage(
+                                <div className='rounded-md py-2 px-4 bg-amber-200 dark:bg-amber-900'>
+                                    <span className='text-sm text-black'>Bạn có tin nhắn mới</span>
+                                </div>
+                            );
+                        }
+
+                        setListMsg((prev) => {
+                            const msg = prev.find((item) => item.id === message.id);
+                            if (!msg) {
+                                return [message, ...prev];
+                            }
+                            return prev;
+                        });
+                    }
+
+                } catch (error) {
+                    console.log(error)
+                }
             }
-        }
+        })
+
+
+
     };
 
     const handleScrollNewMessage = () => {
